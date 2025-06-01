@@ -148,9 +148,7 @@ export const generateQuestions = async (req, res) => {
 export const submitAnswer = async (req, res) => {
   try {
     const { question, questionType, transcript, timeSpent } = req.body;
-    
-    // In a real app, you would analyze the transcript here
-    // For this demo, we'll just return the transcript
+   
     
     res.json({
       success: true,

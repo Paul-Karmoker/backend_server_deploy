@@ -1,204 +1,100 @@
-// import User from "../model/user.model.js";
-// import bcrypt from "bcrypt";
-// import jwt from "jsonwebtoken";
-// import crypto from "crypto";
-// import sendEmail from "../utils/sendEmail.js";
-// import dotenv from "dotenv";
+import * as authService from '../service/user.service.js';
 
-// dotenv.config();
+import {
+  forgotPassword as forgotPasswordSvc,
+  resetPassword   as resetPasswordSvc,
+  // … other exports like signUp, login, etc.
+} from '../service/user.service.js';
 
-// // Helper function to generate JWT token
-// const generateToken = (userId) => {
-//   if (!process.env.JWT_SECRET) {
-//     throw new Error('JWT_SECRET is not defined');
-//   }
-//   return jwt.sign(
-//     { id: userId },
-//     process.env.JWT_SECRET,
-//     { expiresIn: '30d' }
-//   );
-// };
+export async function signUp(req, res, next) {
+  try {
+    const result = await authService.signUp(req.body);
+    res.status(201).json(result);
+  } catch (e) {
+    next(e);
+  }
+}
 
-// export const signup = async (req, res) => {
-//   try {
-//     const { firstName, lastName, email, password } = req.body;
+export async function login(req, res, next) {
+  try {
+    const result = await authService.login(req.body);
+    res.status(200).json(result);
+  } catch (e) {
+    next(e);
+  }
+}
 
-//     if (!firstName || !lastName || !email || !password) {
-//       return res.status(400).json({ message: "All fields are required" });
-//     }
+export async function forgotPassword(req, res, next) {
+  try {
+    await forgotPasswordSvc(req.body.email);
+    res.json({ message: 'Password reset link sent to your email' });
+  } catch (err) {
+    next(err);
+  }
+}
 
-//     const existingUser = await User.findOne({ email });
-//     if (existingUser) {
-//       return res.status(400).json({ message: "User already exists" });
-//     }
+export async function resetPassword(req, res, next) {
+  try {
+    const { token, newPassword } = req.body;
+    await resetPasswordSvc(token, newPassword);
+    res.json({ message: 'Password has been reset' });
+  } catch (err) {
+    next(err);
+  }
+}
 
-//     const saltRounds = 10;
-//     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-//     const createdUser = await User.create({
-//       firstName,
-//       lastName,
-//       email,
-//       password: hashedPassword,
-//     });
+export async function changePassword(req, res, next) {
+  try {
+    const { oldPassword, newPassword } = req.body;
+    const result = await authService.changePassword(
+      req.user._id,
+      oldPassword,
+      newPassword
+    );
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+}
 
-//     const token = generateToken(createdUser._id);
 
-//     res.status(201).json({
-//       message: "User created successfully",
-//       token,
-//       user: {
-//         _id: createdUser._id,
-//         firstName: createdUser.firstName,
-//         lastName: createdUser.lastName,
-//         email: createdUser.email,
-//       },
-//     });
-//   } catch (error) {
-//     console.error("Error in signup:", error.message);
-//     res.status(500).json({ message: "Internal Server Error" });
-//   }
-// };
+export async function verifyEmail(req, res, next) {
+  try {
+    await authService.verifyEmail(req.query.token);
+    res.json({ message: 'Email verified! You can now log in.' });
+  } catch (err) {
+    next(err);
+  }
+}
 
-// export const login = async (req, res) => {
-//   try {
-//     const { email, password } = req.body;
+export async function getProfile(req, res, next) {
+  try {
+    const user = await authService.getUser(req.user._id);
+    res.json({ user });
+  } catch (err) {
+    next(err);
+  }
+}
 
-//     // Input validation
-//     if (!email || !password) {
-//       return res.status(400).json({ message: "Email and password are required" });
-//     }
+export async function updateProfile(req, res, next) {
+  try {
+    const updatedUser = await authService.updateProfile(req.user._id, req.body);
+    res.json({ user: updatedUser });
+  } catch (err) {
+    next(err);
+  }
+}
 
-//     const user = await User.findOne({ email }).select('+password');
-//     if (!user) {
-//       return res.status(401).json({ message: "Invalid credentials" });
-//     }
+export async function subscribe(req, res, next) {
+  try {
+    const updatedUser = await authService.subscribe(req.user._id, req.body);
+    res.json({ user: updatedUser });
+  } catch (err) {
+    next(err);
+  }
+}
 
-//     const isMatch = await bcrypt.compare(password, user.password);
-//     if (!isMatch) {
-//       return res.status(401).json({ message: "Invalid credentials" });
-//     }
 
-//     const token = generateToken(user._id);
 
-//     return res.status(200).json({
-//       success: true,
-//       message: "Login successful",
-//       token,
-//       user: {
-//         _id: user._id,
-//         firstName: user.firstName,
-//         email: user.email,
-//       }
-//     });
 
-//   } catch (error) {
-//     console.error("Login error:", error);
-//     return res.status(500).json({ 
-//       success: false,
-//       message: "An error occurred during login" 
-//     });
-//   }
-// };
-
-// export const forgotPassword = async (req, res) => {
-//   try {
-//     const { email } = req.body;
-
-//     // 1. Find user by email
-//     const user = await User.findOne({ email });
-//     if (!user) {
-//       return res.status(404).json({ message: "User not found with this email" });
-//     }
-
-//     // 2. Generate reset token
-//     const resetToken = crypto.randomBytes(20).toString("hex");
-    
-//     // 3. Hash token and set expiry (1 hour)
-//     user.resetPasswordToken = crypto
-//       .createHash("sha256")
-//       .update(resetToken)
-//       .digest("hex");
-//     user.resetPasswordExpire = Date.now() + 3600000; // 1 hour
-    
-//     await user.save();
-
-//     // 4. Create reset URL
-//     const resetUrl = `${req.protocol}://${req.get(
-//       "host"
-//     )}/api/users/reset-password/${resetToken}`;
-
-//     // 5. Email message
-//     const message = `You are receiving this email because you requested a password reset. Please click on the following link to reset your password:\n\n${resetUrl}\n\nIf you didn't request this, please ignore this email.`;
-
-//     try {
-//       await sendEmail({
-//         email: user.email,
-//         subject: "Password Reset Request",
-//         message,
-//       });
-
-//       res.status(200).json({
-//         success: true,
-//         message: "Password reset email sent",
-//       });
-//     } catch (err) {
-//       // Reset token if email fails
-//       user.resetPasswordToken = undefined;
-//       user.resetPasswordExpire = undefined;
-//       await user.save();
-
-//       return res.status(500).json({
-//         message: "Email could not be sent",
-//       });
-//     }
-//   } catch (error) {
-//     console.error("Forgot password error:", error);
-//     res.status(500).json({ message: "Internal Server Error" });
-//   }
-// };
-
-// export const resetPassword = async (req, res) => {
-//   try {
-//     // 1. Get hashed token from URL
-//     const resetPasswordToken = crypto
-//       .createHash("sha256")
-//       .update(req.params.token)
-//       .digest("hex");
-
-//     // 2. Find user with matching token that hasn't expired
-//     const user = await User.findOne({
-//       resetPasswordToken,
-//       resetPasswordExpire: { $gt: Date.now() },
-//     });
-
-//     if (!user) {
-//       return res.status(400).json({ message: "Invalid or expired token" });
-//     }
-
-//     // 3. Set new password
-//     const saltRounds = 10;
-//     user.password = await bcrypt.hash(req.body.password, saltRounds);
-//     user.resetPasswordToken = undefined;
-//     user.resetPasswordExpire = undefined;
-    
-//     await user.save();
-
-//     // 4. Generate new JWT token
-//     const token = generateToken(user._id);
-
-//     res.status(200).json({
-//       success: true,
-//       message: "Password updated successfully",
-//       token,
-//       user: {
-//         _id: user._id,
-//         firstName: user.firstName,
-//         email: user.email,
-//       },
-//     });
-//   } catch (error) {
-//     console.error("Reset password error:", error);
-//     res.status(500).json({ message: "Internal Server Error" });
-//   }
-// };

@@ -2,8 +2,8 @@
 import fetch from 'node-fetch';       // or global `fetch` in Node 18+
 import dayjs from 'dayjs';
 import jwt   from 'jsonwebtoken';
-import User  from '../../auth/auth.model.js';
-import Tx    from './bkashTransaction.model.js';
+import User  from '../model/user.model.js';
+import Tx    from '../model/bkashTransaction.model.js';
 
 const {
   BKASH_BASE_URL,        // e.g. https://tokenized.sandbox.bka.sh/v1.2.0-beta

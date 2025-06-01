@@ -1,6 +1,6 @@
 // src/middleware/auth.middleware.js
 import jwt from 'jsonwebtoken';
-import User from '../auth.model.js';
+import User from '../model/user.model.js';
 
 /**
  * Protect middleware - Verifies JWT and attaches user to request

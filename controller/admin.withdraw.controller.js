@@ -1,5 +1,5 @@
-import * as svc from './adminWithdrawal.service.js';
-import *as asvc from "../../client/auth/auth.service.js"
+import * as svc from '../service/adminWithdrawal.service.js';
+import *as asvc from "../service/user.service.js"
 
 export async function listWithdrawals(req, res, next) {
   try {

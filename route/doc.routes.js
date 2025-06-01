@@ -4,18 +4,18 @@ import {
   generateDocx,
   getContentHistory
 } from '../controller/doc.controller.js';
-import { protect } from '../src/client/auth/utils/auth.middleware.js';
+import { protect } from '../utils/auth.middleware.js';
 import multer from 'multer';
 
 const router = express.Router();
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB file size limit (updated from 5MB)
-    files: 1 // Only allow single file upload
+    fileSize: 10 * 1024 * 1024,
+    files: 1
   },
   fileFilter: (req, file, cb) => {
-    // Accept text files, PDFs, Word docs, and Excel files
+
     const allowedTypes = [
       'text/plain',
       'application/pdf',

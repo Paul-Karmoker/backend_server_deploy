@@ -1,32 +1,44 @@
-// utils/sendEmail.js
 import nodemailer from 'nodemailer';
+import dotenv from 'dotenv';
+dotenv.config();
 
-const sendEmail = async ({ email, subject, message }) => {
-  try {
-    // Create transporter
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: process.env.SMTP_PORT,
-      auth: {
-        user: process.env.SMTP_USERNAME,
-        pass: process.env.SMTP_PASSWORD
-      }
-    });
+const {
+  SMTP_HOST,
+  SMTP_PORT,
+  SMTP_USER,
+  SMTP_PASS,
+  EMAIL_FROM,
+} = process.env;
 
-    // Send email
-    await transporter.sendMail({
-      from: `"${process.env.FROM_NAME}" <${process.env.FROM_EMAIL}>`,
-      to: email,
-      subject,
-      text: message
-    });
+if (!SMTP_HOST || !SMTP_PORT || !SMTP_USER || !SMTP_PASS || !EMAIL_FROM) {
+  throw new Error(
+    'Missing SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS or EMAIL_FROM in .env'
+  );
+}
 
-    return true;
-  } catch (error) {
-    console.error('Email sending error:', error);
-    return false;
-  }
-};
+const transporter = nodemailer.createTransport({
+  host: SMTP_HOST,
+  port: Number(SMTP_PORT),
+  secure: Number(SMTP_PORT) === 465, // true on 465
+  auth: {
+    user: SMTP_USER,
+    pass: SMTP_PASS,
+  },
+});
 
-// Export as default
-export default sendEmail;
+/**
+ * Send an email.
+ * @param {string} to
+ * @param {string} subject
+ * @param {string} html
+ * @param {string} [text]
+ */
+export default function sendEmail(to, subject, html, text) {
+  return transporter.sendMail({
+    from: EMAIL_FROM,
+    to,
+    subject,
+    text,
+    html,
+  });
+}

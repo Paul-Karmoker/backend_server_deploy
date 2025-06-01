@@ -1,5 +1,5 @@
-import Withdrawal from '../../client/withdrawal/withdrawal.model.js';
-import User from '../../client/auth/auth.model.js';
+import Withdrawal from '../model/withdrawal.model.js';
+import User from '../model/user.model.js';
 
 export async function listWithdrawals() {
   return Withdrawal.find()

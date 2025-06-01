@@ -1,4 +1,4 @@
-import * as bkashSvc from './bkash.service.js';
+import * as bkashSvc from '../service/bkash.service.js';
 
 export async function createBkashPayment(req, res, next) {
   try {

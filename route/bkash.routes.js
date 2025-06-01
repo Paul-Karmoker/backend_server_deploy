@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import * as payCtrl from './bkash.controller.js';
+import * as payCtrl from '../controller/bkash.controller.js';
 
 const router = Router();
 

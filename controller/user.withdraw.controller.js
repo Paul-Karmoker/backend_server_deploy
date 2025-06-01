@@ -1,4 +1,4 @@
-import * as svc from './withdrawal.service.js';
+import * as svc from '../service/userwithdraw.service.js';
 
 export async function requestWithdrawal(req, res, next) {
   try {

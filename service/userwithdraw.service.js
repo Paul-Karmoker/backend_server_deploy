@@ -1,5 +1,5 @@
-import Withdrawal from './withdrawal.model.js';
-import User from '../auth/auth.model.js';
+import Withdrawal from '../model/withdrawal.model.js';
+import User from '../model/user.model.js';
 
 export async function requestWithdrawal(userId, { points, paymentProvider, paymentNumber }) {
   const user = await User.findById(userId);

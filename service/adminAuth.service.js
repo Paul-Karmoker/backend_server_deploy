@@ -1,6 +1,5 @@
-// src/services/adminAuth.service.js
 import jwt from 'jsonwebtoken';
-import UserModel from "../../client/auth/auth.model.js";
+import UserModel from "../model/user.model.js";
 
 const { JWT_SECRET } = process.env;
 
@@ -34,4 +33,19 @@ export async function adminLogin({ email, password }) {
       photo: user.photo,
     },
   };
+}
+
+export async function getDashboardData() {
+  const now = new Date();
+  const totalUsers     = await UserModel.countDocuments();
+  const totalFreeTrial = await UserModel.countDocuments({ subscriptionType: 'freeTrial' });
+  const totalPremium   = await UserModel.countDocuments({ subscriptionType: 'premium' });
+  const totalActive    = await UserModel.countDocuments({
+    $or: [
+      { subscriptionType: 'freeTrial',    freeTrialExpiresAt: { $gt: now } },
+      { subscriptionType: 'premium',      subscriptionExpiresAt: { $gt: now } }
+    ]
+  });
+  const users = await UserModel.find().select('-password').lean();
+  return { totalUsers, totalFreeTrial, totalPremium, totalActive, users };
 }
