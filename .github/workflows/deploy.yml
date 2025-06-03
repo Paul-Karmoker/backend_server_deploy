@@ -19,10 +19,7 @@ jobs:
       - name: Install Dependencies
         # Uncomment if you want to install only when deps change
         # if: steps.deps_changes.outputs.dependencies == 'true'
-        run: npm install
-
-      - name: Build the Project
-        run: npm run build
+        run: npm install --force
 
       - name: Check if server is running and restart or start accordingly
         run: |
