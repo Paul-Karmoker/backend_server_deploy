@@ -1,4 +1,4 @@
-name: server
+name: client
 
 on:
   push:
@@ -7,40 +7,48 @@ on:
 jobs:
   deploy:
     runs-on: self-hosted
-    steps:
-      - uses: actions/checkout@v4
 
-      - name: Detect dependency-related changes
+    steps:
+      # 1) Checkout your code as usual
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2) Use dorny/paths-filter to detect changes to package.json or yarn.lock
+      - name: Detect dependency‐related changes
         id: deps_changes
         uses: dorny/paths-filter@v2
         with:
           filters: |
             dependencies:
               - 'package.json'
-              - 'package-lock.json'
+              - 'yarn.lock'
 
+      # 3) Set up Node.js and enable caching for yarn
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 23.x
-          cache: "npm"
+          cache: "yarn"
+          # The cache key automatically uses the contents of package.json + yarn.lock,
+          # so when those haven’t changed, yarn install will restore from cache.
 
+      # 4) Install dependencies only if package.json or yarn.lock changed this push
       - name: Install Dependencies
-        # Uncomment if you want to install only when deps change
-        # if: steps.deps_changes.outputs.dependencies == 'true'
+        if: steps.deps_changes.outputs.dependencies == 'true'
         run: npm install
 
+      # 5) Build the project (you probably want to build even if deps didn’t change—
+      #    else guard this too if, for example, only code changes should trigger a build)
       - name: Build the Project
         run: npm run build
 
-      - name: Check if server is running and restart or start accordingly
+      # 6) Restart or start the PM2 process
+      - name: Check/Restart or Start client with PM2
         run: |
-          if pm2 list | grep -q "server"; then
-            echo "server is already running, restarting it..."
-            pm2 restart server
+          if pm2 list | grep -q "client"; then
+            echo "client is already running, restarting it..."
+            pm2 restart client
           else
-            echo "server is not running, starting it..."
-            pm2 start npm --name "server" -- start
+            echo "client is not running, starting it..."
+            pm2 start npm --name "client" -- start
           fi
-
-#
