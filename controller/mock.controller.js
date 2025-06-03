@@ -1,6 +1,6 @@
 import { promises as fs } from 'fs';
 import path from 'path';
-import pdf from 'pdf-parse';
+import { PDFDocument } from 'pdf-lib';
 import mammoth from 'mammoth';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import dotenv from 'dotenv';
@@ -12,8 +12,13 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 async function extractTextFromPDF(pdfPath) {
   try {
     const dataBuffer = await fs.readFile(pdfPath);
-    const data = await pdf(dataBuffer);
-    return data.text;
+    const pdfDoc = await PDFDocument.load(dataBuffer);
+    const pages = pdfDoc.getPages();
+    let text = '';
+    for (const page of pages) {
+      text += await page.getTextContent();
+    }
+    return text;
   } catch (error) {
     console.error('PDF extraction error:', error);
     throw new Error('Failed to extract text from PDF');

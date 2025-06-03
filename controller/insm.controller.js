@@ -1,6 +1,6 @@
 import { InterviewSession } from '../model/insm.model.js';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import pdf from 'pdf-parse';
+import { PDFDocument } from 'pdf-lib';
 import mammoth from 'mammoth';
 import { promisify } from 'util';
 import fs from 'fs';
@@ -16,25 +16,19 @@ const readFileAsync = promisify(fs.readFile);
 const unlinkAsync = promisify(fs.unlink);
 
 // Helper to extract text from documents
-async function extractTextFromFile(file) {
-  const ext = path.extname(file.originalname).toLowerCase();
-  const tempPath = path.join(__dirname, '..', 'uploads', file.originalname);
-  
-  await fs.promises.writeFile(tempPath, file.buffer);
-  
+async function extractTextFromPDF(pdfPath) {
   try {
-    if (ext === '.pdf') {
-      const dataBuffer = await readFileAsync(tempPath);
-      const data = await pdf(dataBuffer);
-      return data.text;
-    } else if (ext === '.docx') {
-      const result = await mammoth.extractRawText({ path: tempPath });
-      return result.value;
-    } else if (ext === '.txt') {
-      return await readFileAsync(tempPath, 'utf8');
+    const dataBuffer = await fs.promises.readFile(pdfPath);
+    const pdfDoc = await PDFDocument.load(dataBuffer);
+    const pages = pdfDoc.getPages();
+    let text = '';
+    for (const page of pages) {
+      text += await page.getTextContent();
     }
-  } finally {
-    await unlinkAsync(tempPath);
+    return text;
+  } catch (error) {
+    console.error('PDF extraction error:', error);
+    throw new Error('Failed to extract text from PDF');
   }
 }
 

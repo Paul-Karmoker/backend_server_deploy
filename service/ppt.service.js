@@ -3,17 +3,18 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import PDFDocument from 'pdfkit';
 import dotenv from 'dotenv';
 import { Buffer } from 'buffer';
-import { createRequire } from 'module';
 import chroma from 'chroma-js';
 import { ChartJSNodeCanvas } from 'chartjs-node-canvas';
 import { createCanvas } from 'canvas';
 
-const require = createRequire(import.meta.url);
-const pdfParse = require('pdf-parse');
-
 dotenv.config();
 
-// Initialize Gemini
+
+if (!process.env.GOOGLE_API_KEY) {
+  throw new Error('GOOGLE_API_KEY is not defined in environment variables');
+}
+
+
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
 const model = genAI.getGenerativeModel({ 
   model: "gemini-2.0-flash",
@@ -22,7 +23,8 @@ const model = genAI.getGenerativeModel({
   }
 });
 
-// Initialize Chart renderer
+
+
 const chartRenderer = new ChartJSNodeCanvas({
   width: 800,
   height: 600,
@@ -30,9 +32,18 @@ const chartRenderer = new ChartJSNodeCanvas({
 });
 
 export class PPTService {
-  static async generatePresentation(content, slideCount = 5, design = 'professional', animation = true, includeGraphics = true, sourceType = 'text', sourceMetadata = {}, presentationDetails = {}) {
+  static async generatePresentation(
+    content,
+    slideCount = 5,
+    design = 'professional',
+    animation = true,
+    includeGraphics = true,
+    sourceType = 'text',
+    sourceMetadata = {},
+    presentationDetails = {}
+  ) {
     try {
-      // Validate input parameters
+     
       if (!content || typeof content !== 'string' || content.trim().length === 0) {
         throw new Error('Presentation content must be a non-empty string');
       }
@@ -46,7 +57,7 @@ export class PPTService {
         throw new Error(`Invalid design. Must be one of: ${validDesigns.join(', ')}`);
       }
 
-      // Set default presentation details if not provided
+      
       const details = {
         title: 'Presentation Title',
         subtitle: 'Presentation Subtitle',
@@ -67,7 +78,7 @@ export class PPTService {
       try {
         enhancedContent = await this.enhanceContentWithAI(content, slideCount);
       } catch (enhanceError) {
-        console.error('Content enhancement failed, using original content:', enhanceError);
+        console.error('Content enhancement failed, using original content:', enhanceError.message);
         enhancedContent = { enhancedContent: content };
       }
 
@@ -122,7 +133,7 @@ export class PPTService {
         metadata
       };
     } catch (error) {
-      console.error('Error in generatePresentation:', error);
+      console.error('Error in generatePresentation:', error.message);
       throw new Error(`Failed to generate presentation: ${error.message}`);
     }
   }
@@ -181,7 +192,7 @@ export class PPTService {
 
       return canvas.toBuffer('image/png');
     } catch (error) {
-      console.error('Error generating thumbnail:', error);
+      console.error('Error generating thumbnail:', error.message);
       return null;
     }
   }
@@ -194,7 +205,9 @@ export class PPTService {
         enhancedContent: content,
         narratives: [],
         visualSuggestions: [],
-        dataPoints: []
+        dataPoints: [],
+        speakerNotes: [],
+        transitions: []
       };
     }
 
@@ -255,7 +268,7 @@ export class PPTService {
       // Enhanced JSON cleaning with additional fixes
       let jsonString = text
         .replace(/```json|```/g, '')
-        .replace(/[\u0000-\u001F\u007F-\u009F]/g, '')
+        .replace(/[-\u001F\u007F-\u009F]/g, '')
         .replace(/(\w+)\s*:/g, '"$1":')  // Fix unquoted keys
         .replace(/:\s*'([^']+)'/g, ': "$1"')  // Fix single-quoted values
         .trim();
@@ -268,7 +281,7 @@ export class PPTService {
         return JSON.parse(jsonString);
       }
     } catch (error) {
-      console.error('AI enhancement failed:', error);
+      console.error('AI enhancement failed:', error.message);
       return { 
         enhancedContent: content,
         narratives: [], 
@@ -375,7 +388,7 @@ export class PPTService {
         // Enhanced JSON cleaning and parsing
         let jsonString = text
           .replace(/```json|```/g, '')
-          .replace(/[\u0000-\u001F\u007F-\u009F]/g, '')
+          .replace(/[-\u001F\u007F-\u009F]/g, '')
           .trim();
 
         try {
@@ -445,7 +458,7 @@ export class PPTService {
           .replace(/"(true|false|null)"/g, '$1'); // Fix quoted primitives
       }
     } catch (error) {
-      console.error('Failed to fix JSON:', error);
+      console.error('Failed to fix JSON:', error.message);
       throw new Error('Unable to parse AI response');
     }
   }
@@ -539,7 +552,7 @@ export class PPTService {
 
       return await chartRenderer.renderToBuffer(config);
     } catch (error) {
-      console.error('Error generating chart:', error);
+      console.error('Error generating chart:', error.message);
       return null;
     }
   }
@@ -747,10 +760,12 @@ export class PPTService {
                     options: {
                       responsive: true,
                       plugins: {
-                        title: {
-                          display: true,
-                          text: graphic.description.substring(0, 50)
-                        }
+                        title: [
+                          {
+                            display: true,
+                            text: graphic.description.substring(0, 50)
+                          }
+                        ]
                       }
                     }
                   });
@@ -763,12 +778,12 @@ export class PPTService {
                     continue;
                   }
                 } catch (error) {
-                  console.error('Error generating chart:', error);
+                  console.error('Error generating chart:', error.message);
                 }
               }
 
               // Fallback to text placeholder
-              pptSlide.addText(`[${graphic.type?.toUpperCase() || 'GRAPHIC'}: ${graphic.description.substring(0, 100)}]`, {
+              pptSlide.addText(`[${graphic.type?.toString().toUpperCase() || 'GRAPHIC'}: ${graphic.description?.substring(0, 100) || ''}]`, {
                 ...graphicOptions,
                 fill: { color: cleanColor(designSystem.accent) + '20' },
                 fontSize: 12,
@@ -796,7 +811,7 @@ export class PPTService {
       }
 
       // Add Thank You Slide (Last Page)
-      const thankYouSlide = pptx.addSlide(`PRO_MASTER_${design.toUpperCase()}`);
+      const thankYouSlide = pptx.addSlide(`PRO_MASTER_${design.toString().toUpperCase()}`);
       thankYouSlide.background = { color: cleanColor(designSystem.primary) };
       
       thankYouSlide.addText('Thank You', {
@@ -827,7 +842,7 @@ export class PPTService {
 
       return { pptx, processingTime: Date.now() - startTime };
     } catch (error) {
-      console.error('Error creating professional PPTX:', error);
+      console.error('Error creating professional PPTx:', error.message);
       throw new Error(`Failed to create PowerPoint: ${error.message}`);
     }
   }
@@ -854,6 +869,7 @@ export class PPTService {
         const buffers = [];
         doc.on('data', buffers.push.bind(buffers));
         doc.on('end', () => resolve(Buffer.concat(buffers)));
+        doc.on('error', (error) => reject(error));
 
         const designSystem = this.getDesignSystem(design);
 
@@ -953,7 +969,7 @@ export class PPTService {
                .fontSize(12)
                .fillColor('#666666')
                .text(String(slide.speakerNotes).substring(0, 1000), {
-                indent: 30
+                 indent: 30
                });
           }
 
@@ -961,7 +977,7 @@ export class PPTService {
           if (includeGraphics && slide.graphics?.length > 0 && slide.graphics[0]?.description) {
             doc.moveDown()
                .rect(300, 200, 200, 100)
-               .fill(designSystem.secondary + '20')
+               .fill(designSystem.secondary || '#FFFFFF20')
                .stroke(designSystem.accent)
                .fontSize(10)
                .fillColor(designSystem.textDark)
@@ -1012,7 +1028,7 @@ export class PPTService {
 
         doc.end();
       } catch (error) {
-        console.error('Error creating PDF:', error);
+        console.error('Error creating PDF:', error.message);
         reject(new Error(`Failed to create PDF: ${error.message}`));
       }
     });

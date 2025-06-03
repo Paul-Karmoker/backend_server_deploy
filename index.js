@@ -39,12 +39,12 @@ app.use(express.json());
 
 app.use("/ai", aiRoutes);
 app.use("/cover", coverRoutes);
-app.use('/ppt', PPT);
+//app.use('/ppt', PPT);
 app.use('/doc', Docx);
-app.use('/interview', Interview);
-app.use("/excel", Excel);
+//app.use('/interview', Interview);
+//app.use("/excel", Excel);
 app.use("/qa", Qa);
-app.use("/insm", Insm);
+//app.use("/insm", Insm);
 
 app.use('/api/v1/auth', AuthRoute);
 app.use('/api/v1/admin', AdminAuthRoute);
