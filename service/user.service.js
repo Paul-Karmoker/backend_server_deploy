@@ -601,7 +601,3 @@ export async function approveSubscription(userId) {
     }
   };
 }
-
-// ─────────────────────────────
-// logout user
-// ─────────────────────────────
