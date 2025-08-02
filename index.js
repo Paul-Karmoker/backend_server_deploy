@@ -8,15 +8,17 @@ import passport from 'passport';
 import './utils/passport.js';
 import aiRoutes from './route/ai.routes.js';
 import coverRoutes from './route/cover.routes.js';
-import PPT from './route/ppt.routes.js';
+//import PPT from './route/ppt.routes.js';
 import Docx from './route/doc.routes.js';
-import Interview from './route/mock.routes.js';
-import Excel from './route/excel.routes.js';
+//import Interview from './route/mock.routes.js';
+//import Excel from './route/excel.routes.js';
 import Qa from './route/qa.routes.js';
-import Insm from './route/insm.routes.js'
+//import Insm from './route/insm.routes.js'
 import AuthRoute from './route/user.auth.route.js';
 import AdminAuthRoute from './route/admin.auth.routes.js';
 import Bkash from './route/bkash.routes.js';
+
+import ResumeRouter from './route/resume.routes.js';
 
 
 const app = express();
@@ -49,6 +51,7 @@ app.use("/qa", Qa);
 app.use('/api/v1/auth', AuthRoute);
 app.use('/api/v1/admin', AdminAuthRoute);
 app.use('/api/v1/bkash', Bkash);
+app.use("/api/v1/resume", ResumeRouter);
 
 
 app.get("/", (req, res) => {
