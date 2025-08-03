@@ -444,4 +444,4 @@ const docService = {
 };
 
 export const generateCoverLetterDocx = docService.generateCoverLetterDocx.bind(docService);
-export default docService;;
+export default docService;
