@@ -8,12 +8,12 @@ import passport from 'passport';
 import './utils/passport.js';
 import aiRoutes from './route/ai.routes.js';
 import coverRoutes from './route/cover.routes.js';
-//import PPT from './route/ppt.routes.js';
+import PPT from './route/ppt.routes.js';
 import Docx from './route/doc.routes.js';
-//import Interview from './route/mock.routes.js';
+import Interview from './route/mock.routes.js';
 //import Excel from './route/excel.routes.js';
 import Qa from './route/qa.routes.js';
-//import Insm from './route/insm.routes.js'
+import Insm from './route/insm.routes.js'
 import AuthRoute from './route/user.auth.route.js';
 import AdminAuthRoute from './route/admin.auth.routes.js';
 import Bkash from './route/bkash.routes.js';
@@ -40,14 +40,13 @@ app.use(cors({
 app.use(express.json());
 
 app.use("/ai", aiRoutes);
-app.use("/cover", coverRoutes);
-//app.use('/ppt', PPT);
-app.use('/doc', Docx);
-//app.use('/interview', Interview);
+app.use("/api/v1/cover", coverRoutes);
+app.use('/api/v1/ppt', PPT);
+app.use('/api/v1/doc', Docx);
+app.use('/api/v1/interview', Interview);
 //app.use("/excel", Excel);
 app.use("/qa", Qa);
-//app.use("/insm", Insm);
-
+app.use("/api/v1/insm", Insm);
 app.use('/api/v1/auth', AuthRoute);
 app.use('/api/v1/admin', AdminAuthRoute);
 app.use('/api/v1/bkash', Bkash);
