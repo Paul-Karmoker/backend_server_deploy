@@ -3,7 +3,6 @@ import * as authService from '../service/user.service.js';
 import {
   forgotPassword as forgotPasswordSvc,
   resetPassword   as resetPasswordSvc,
-  // … other exports like signUp, login, etc.
 } from '../service/user.service.js';
 
 export async function signUp(req, res, next) {
