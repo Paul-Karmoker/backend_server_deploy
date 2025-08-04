@@ -39,7 +39,7 @@ app.use(cors({
 }));
 app.use(express.json());
 
-app.use("/ai", aiRoutes);
+app.use("/api/v1/ai", aiRoutes);
 app.use("/api/v1/cover", coverRoutes);
 app.use('/api/v1/ppt', PPT);
 app.use('/api/v1/doc', Docx);
