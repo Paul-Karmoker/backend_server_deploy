@@ -72,14 +72,34 @@ export const generateQuestions = async (req, res) => {
       return res.status(400).json({ error: 'Text content is required' });
     }
 
-    const prompt = `Generate 5 interview questions (3 technical, 2 scenario-based) for this job description:\n\n${text}`;
+    const prompt = `Based on the following job description, generate exactly 5 interview questions: 3 technical questions that test specific skills and knowledge required for the role, and 2 scenario-based questions that assess problem-solving and behavioral fit. Make the questions relevant, concise, and tailored to the key responsibilities, requirements, and technologies mentioned in the description.
+
+Output the response strictly in JSON format as an array of objects, each with:
+- "type": "technical" or "scenario"
+- "question": the question text
+
+Job description:\n\n${text}`;
     
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' }); // Corrected model name assumption; adjust if needed
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const generatedText = response.text();
 
-    res.json({ questions: generatedText.split('\n').filter(q => q.trim()) });
+    // Parse the JSON output
+    let questions;
+    try {
+      // Clean up potential markdown or extra text
+      const jsonString = generatedText.replace(/```json\n?|\n?```/g, '').trim();
+      questions = JSON.parse(jsonString);
+      if (!Array.isArray(questions) || questions.length !== 5) {
+        throw new Error('Invalid questions format');
+      }
+    } catch (parseError) {
+      console.error('Error parsing questions:', parseError);
+      return res.status(500).json({ error: 'Failed to parse generated questions' });
+    }
+
+    res.json({ questions });
   } catch (error) {
     console.error('Error generating questions:', error);
     res.status(500).json({ 
@@ -96,18 +116,40 @@ export const analyzeAnswers = async (req, res) => {
       return res.status(400).json({ error: 'Answers are required' });
     }
 
-    const prompt = `Analyze these answers, score them out of 100, and provide expert feedback if the score is ≤ 95:\n\n${JSON.stringify(answers)}`;
+    const prompt = `You are an expert interviewer evaluating candidate responses for a job interview. Analyze the following answers provided by the candidate. For each answer, assess based on:
+- Relevance to the question
+- Depth and accuracy of knowledge (for technical questions)
+- Problem-solving approach, clarity, and behavioral insights (for scenario-based questions)
+- Overall communication quality
+
+Calculate an overall score out of 100, averaging scores across all answers. If the overall score is 95 or below, provide detailed expert feedback including strengths, weaknesses, and specific suggestions for improvement. If the score is above 95, provide no feedback.
+
+Output strictly in JSON format with:
+- "score": the overall integer score (0-100)
+- "feedback": a string with detailed feedback if score <= 95, otherwise null
+
+Answers:\n\n${JSON.stringify(answers)}`;
     
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' }); // Corrected model name assumption; adjust if needed
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const output = response.text();
 
-    const scoreMatch = output.match(/\d+/);
-    const score = scoreMatch ? parseInt(scoreMatch[0], 10) : 100;
-    const feedback = score <= 95 ? output : null;
+    // Parse the JSON output
+    let analysis;
+    try {
+      // Clean up potential markdown or extra text
+      const jsonString = output.replace(/```json\n?|\n?```/g, '').trim();
+      analysis = JSON.parse(jsonString);
+      if (typeof analysis.score !== 'number' || (analysis.feedback !== null && typeof analysis.feedback !== 'string')) {
+        throw new Error('Invalid analysis format');
+      }
+    } catch (parseError) {
+      console.error('Error parsing analysis:', parseError);
+      return res.status(500).json({ error: 'Failed to parse analysis' });
+    }
 
-    res.json({ score, feedback });
+    res.json(analysis);
   } catch (error) {
     console.error('Error analyzing answers:', error);
     res.status(500).json({ 

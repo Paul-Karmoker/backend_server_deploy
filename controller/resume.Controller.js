@@ -14,7 +14,7 @@ import {AppError} from '../utils/errorHandler.js';
 
   export async function getResume(req, res, next) {
     try {
-      const resume = await resumeService.getResume(req.user._id, req.params.id);
+      const resume = await resumeService.getResume(req.params.id);
       if (!resume) return next(new AppError('Resume not found', 404));
       res.json({ status: 'success', data: resume });
     } catch (error) {
@@ -43,7 +43,7 @@ import {AppError} from '../utils/errorHandler.js';
 
   export async function addWorkExperience(req, res, next) {
     try {
-      const resume = await resumeService.addWorkExperience(req.user._id, req.params.id, req.body);
+      const resume = await resumeService.addWorkExperience(req.params.id, req.body);
       res.json({ status: 'success', data: resume });
     } catch (error) {
       next(new AppError(error.message, 400));
@@ -52,7 +52,7 @@ import {AppError} from '../utils/errorHandler.js';
 
   export async function deleteWorkExperience(req, res, next) {
     try {
-      const resume = await resumeService.deleteWorkExperience(req.user._id, req.params.id, req.body.index);
+      const resume = await resumeService.deleteWorkExperience( req.params.id, req.body.index);
       res.json({ status: 'success', data: resume });
     } catch (error) {
       next(new AppError(error.message, 400));
@@ -61,7 +61,7 @@ import {AppError} from '../utils/errorHandler.js';
 
   export async function addEducation(req, res, next) {
     try {
-      const resume = await resumeService.addEducation(req.user._id, req.params.id, req.body);
+      const resume = await resumeService.addEducation( req.params.id, req.body);
       res.json({ status: 'success', data: resume });
     } catch (error) {
       next(new AppError(error.message, 400));
@@ -70,7 +70,7 @@ import {AppError} from '../utils/errorHandler.js';
 
   export async function deleteEducation(req, res, next) {
     try {
-      const resume = await resumeService.deleteEducation(req.user._id, req.params.id, req.body.index);
+      const resume = await resumeService.deleteEducation( req.params.id, req.body.index);
       res.json({ status: 'success', data: resume });
     } catch (error) {
       next(new AppError(error.message, 400));
@@ -79,7 +79,7 @@ import {AppError} from '../utils/errorHandler.js';
 
   export async function addReference(req, res, next) {
     try {
-      const resume = await resumeService.addReference(req.user._id, req.params.id, req.body);
+      const resume = await resumeService.addReference( req.params.id, req.body);
       res.json({ status: 'success', data: resume });
     } catch (error) {
       next(new AppError(error.message, 400));
@@ -88,7 +88,7 @@ import {AppError} from '../utils/errorHandler.js';
 
   export async function deleteReference(req, res, next) {
     try {
-      const resume = await resumeService.deleteReference(req.user._id, req.params.id, req.body.index);
+      const resume = await resumeService.deleteReference( req.params.id, req.body.index);
       res.json({ status: 'success', data: resume });
     } catch (error) {
       next(new AppError(error.message, 400));
