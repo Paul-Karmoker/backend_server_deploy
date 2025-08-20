@@ -17,6 +17,7 @@ import Insm from './route/insm.routes.js'
 import AuthRoute from './route/user.auth.route.js';
 import AdminAuthRoute from './route/admin.auth.routes.js';
 import Bkash from './route/bkash.routes.js';
+import WrittenTest from './route/writtentest.routes.js';
 
 import ResumeRouter from './route/resume.routes.js';
 
@@ -44,6 +45,7 @@ app.use("/api/v1/cover", coverRoutes);
 app.use('/api/v1/ppt', PPT);
 app.use('/api/v1/doc', Docx);
 app.use('/api/v1/interview', Interview);
+app.use("/api/v1/writtenTest", WrittenTest);
 //app.use("/excel", Excel);
 app.use("/qa", Qa);
 app.use("/api/v1/insm", Insm);
