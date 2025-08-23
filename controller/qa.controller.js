@@ -21,6 +21,8 @@ const validateInput = (req, res, next) => {
   next();
 };
 
+
+
 export const generateQuestionsController = async (req, res) => {
   try {
     const { jobDescription, jobTitle, experienceLevel, requirements } = req.body;
@@ -77,6 +79,8 @@ export const generateQuestionsController = async (req, res) => {
     });
   }
 };
+
+
 
 // Export the middleware and controller
 export const questionsController = {
