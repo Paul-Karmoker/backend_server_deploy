@@ -59,8 +59,8 @@ passport.use(new GoogleStrategy({
 
 // ─── Facebook Strategy ──────────────────────────
 passport.use(new FacebookStrategy({
-  clientID: process.env.FACEBOOK_CLIENT_ID,
-  clientSecret: process.env.FACEBOOK_CLIENT_SECRET,
+  clientID: process.env.FACEBOOK_APP_ID,
+  clientSecret: process.env.FACEBOOK_APP_SECRET,
   callbackURL: 'https://backend-server-deploy.onrender.com/auth/facebook/callback', // Update for local testing
   profileFields: ['id', 'emails', 'name', 'picture.type(large)']
 }, async (accessToken, refreshToken, profile, done) => {
