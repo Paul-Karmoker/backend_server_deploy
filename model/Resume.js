@@ -44,17 +44,16 @@ const WorkExperienceSchema = new Schema({
 }, { _id: false });
 
 const EducationSchema = new Schema({
-  institutionName: { type: String, trim: true, required: true },
-  fieldOfStudy: { type: String, trim: true, required: true },
-  degree: { type: String, trim: true, required: true },
+  institutionName: { type: String, trim: true },
+  fieldOfStudy: { type: String, trim: true },
+  degree: { type: String, trim: true},
   city: { type: String, trim: true },
   country: { type: String, trim: true },
-  from: { type: Date, required: true },
-  to: { type: Date },
+  passingYear: { type: Number },
   currentlyStudying: { type: Boolean, default: false },
   gpa: { type: Number, min: 0, max: 4 },
   honors: { type: String, trim: true },
-  description: [{ type: String, trim: true }],
+  description: { type: String, trim: true },
 }, { _id: false });
 
 const TrainingSchema = new Schema({
@@ -83,11 +82,6 @@ const SkillSchema = new Schema({
   }
 }, { _id: false });
 
-const SkillCategorySchema = new Schema({
-  category: { type: String, trim: true, required: true },
-  skills: [SkillSchema]
-}, { _id: false });
-
 const ReferenceSchema = new Schema({
   name: { type: String, trim: true, required: true },
   position: { type: String, trim: true },
@@ -111,11 +105,6 @@ const PersonalInfoSchema = new Schema({
   linkedIn: { type: String, trim: true },
   portfolio: { type: String, trim: true },
   profilePicture: { type: String, trim: true },
-  fatherName: { type: String, trim: true },
-  motherName: { type: String, trim: true },
-  spouseName: { type: String, trim: true },
-  nid: { type: String, trim: true },
-  passport: { type: String, trim: true },
 }, { _id: false });
 
 // Main Resume Schema
@@ -126,7 +115,7 @@ const ResumeSchema = new Schema({
   education: [EducationSchema],
   trainings: [TrainingSchema],
   certifications: [CertificationSchema],
-  skills: [SkillCategorySchema],
+  skills: [SkillSchema],
   references: [ReferenceSchema],
   careerObjective: { type: String, trim: true },
   careerSummary: { type: String, trim: true },
@@ -143,11 +132,6 @@ ResumeSchema.pre('save', function (next) {
   this.workExperience.forEach(exp => {
     if (exp.to && exp.from > exp.to) {
       throw new Error('From date must be before To date in work experience');
-    }
-  });
-  this.education.forEach(edu => {
-    if (edu.to && edu.from > edu.to) {
-      throw new Error('From date must be before To date in education');
     }
   });
   this.trainings.forEach(train => {
