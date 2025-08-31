@@ -351,7 +351,7 @@ export async function resetPassword(token, newPassword) {
                     Your password has been updated successfully. You can now log in with your new password.
                   </p>
                   <p style="text-align:center; margin: 30px 0;">
-                    <a href="${CLIENT_URL}/signinhome" style="display:inline-block; padding:12px 24px; background-color:#28a745; color:#ffffff; text-decoration:none; border-radius:5px; font-size:16px;">Log In</a>
+                    <a href="https://crosscareers.com/signin" style="display:inline-block; padding:12px 24px; background-color:#28a745; color:#ffffff; text-decoration:none; border-radius:5px; font-size:16px;">Log In</a>
                   </p>
                   <hr style="margin:30px 0; border:none; border-top:1px solid #eeeeee;" />
                   <p style="color:#aaaaaa; font-size:12px; text-align:center;">
