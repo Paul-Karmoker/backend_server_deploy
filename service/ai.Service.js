@@ -1,7 +1,6 @@
 // services/resume.service.js
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import UserModel from "../model/user.model";
-import ResumeModel from '../model/Resume';
+
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
 
 // Get model instance
