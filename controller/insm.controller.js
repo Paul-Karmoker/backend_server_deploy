@@ -11,7 +11,7 @@ import { dirname } from 'path';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_CLIENT_SECRET);
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
 const readFileAsync = promisify(fs.readFile);
 const unlinkAsync = promisify(fs.unlink);
 

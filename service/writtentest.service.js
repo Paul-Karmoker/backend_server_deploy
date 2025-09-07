@@ -3,7 +3,7 @@ import { aiModel } from '../utils/writtenttestai.js';
 import { questionGenSystemPrompt, gradingPrompt } from '../utils/promptTemplates.js';
 import { tryParseJsonStrict } from '../utils/json.js';
 
-/** Helper: throw if not active / expired */
+/** Helper: zzthrow if not active / expired */
 async function ensureActiveAndNotExpired(session) {
   if (!session) throw new Error('Session not found');
   if (session.status === 'completed') throw new Error('Session already completed');

@@ -4,10 +4,10 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 // Suppress deprecation warnings
 process.removeAllListeners('warning');
 
-console.log("GOOGLE_CLIENT_SECRET:", process.env.GOOGLE_CLIENT_SECRET); // Log the API key for debugging
+console.log("GOOGLE_API_KEY:", process.env.GOOGLE_API_KEY); // Log the API key for debugging
 
 // Initialize Gemini
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_CLIENT_SECRET);
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
 const model = genAI.getGenerativeModel({ 
   model: "gemini-2.0-flash",
   generationConfig: {

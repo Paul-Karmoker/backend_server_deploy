@@ -36,7 +36,7 @@ passport.deserializeUser(async (id, done) => {
 passport.use(new GoogleStrategy({
   clientID: process.env.GOOGLE_CLIENT_ID,
   clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-  callbackURL: 'https://backend-server-deploy.onrender.com/auth/google/callback' // Update for local testing
+  callbackURL: 'https://api.crosscareers.com' // Update for local testing
 }, async (accessToken, refreshToken, profile, done) => {
   try {
     let user = await User.findOne({ email: profile.emails[0].value });
@@ -61,7 +61,7 @@ passport.use(new GoogleStrategy({
 passport.use(new FacebookStrategy({
   clientID: process.env.FACEBOOK_APP_ID,
   clientSecret: process.env.FACEBOOK_APP_SECRET,
-  callbackURL: 'https://backend-server-deploy.onrender.com/auth/facebook/callback', // Update for local testing
+  callbackURL: 'https://api.crosscareers.com/auth/facebook/callback', // Update for local testing
   profileFields: ['id', 'emails', 'name', 'picture.type(large)']
 }, async (accessToken, refreshToken, profile, done) => {
   try {
@@ -89,7 +89,7 @@ passport.use(new FacebookStrategy({
 passport.use(new LinkedInStrategy({
   clientID: process.env.LINKEDIN_CLIENT_ID,
   clientSecret: process.env.LINKEDIN_CLIENT_SECRET,
-  callbackURL: 'https://backend-server-deploy.onrender.com/auth/linkedin/callback', // Update for local testing
+  callbackURL: 'https://api.crosscareers.com/auth/linkedin/callback', // Update for local testing
   scope: ['r_emailaddress', 'r_liteprofile']
 }, async (accessToken, refreshToken, profile, done) => {
   try {
