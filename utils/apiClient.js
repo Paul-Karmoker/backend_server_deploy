@@ -5,7 +5,7 @@ import axios from "axios";
     try {
       const response = await axios.post(url, data, {
         headers: {
-          'Authorization': `Bearer ${process.env.GOOGLE_API_KEY}`,
+          'Authorization': `Bearer ${process.env.GOOGLE_CLIENT_SECRET}`,
           'Content-Type': 'application/json',
           ...headers
         }

@@ -25,7 +25,7 @@ const TEMP_DIR = path.join(process.cwd(), 'temp');
 
 class ExcelGenerationService {
   constructor() {
-    this.genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
+    this.genAI = new GoogleGenerativeAI(process.env.GOOGLE_CLIENT_SECRET);
     this.model = this.genAI.getGenerativeModel({ 
       model: process.env.AI_MODEL || DEFAULT_AI_MODEL,
       generationConfig: {
