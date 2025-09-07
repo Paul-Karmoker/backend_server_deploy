@@ -35,7 +35,7 @@ if (typeof global.DOMMatrix === 'undefined') {
 }
 
 // Initialize Google Generative AI
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_CLIENT_ID);
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
 const model = genAI.getGenerativeModel({ 
   model: "gemini-2.0-flash",
   generationConfig: {

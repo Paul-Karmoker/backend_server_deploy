@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_CLIENT_ID);
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
 
 // Helper function to safely parse JSON responses
 function safeJsonParse(jsonString) {
