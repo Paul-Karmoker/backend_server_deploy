@@ -10,12 +10,12 @@ import { createCanvas } from 'canvas';
 dotenv.config();
 
 
-if (!process.env.GOOGLE_API_KEY) {
-  throw new Error('GOOGLE_API_KEY is not defined in environment variables');
+if (!process.env.GOOGLE_CLIENT_ID) {
+  throw new Error('GOOGLE_CLIENT_ID is not defined in environment variables');
 }
 
 
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_CLIENT_ID);
 const model = genAI.getGenerativeModel({ 
   model: "gemini-2.0-flash",
   generationConfig: {

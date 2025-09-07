@@ -48,7 +48,7 @@
     "fs": "^0.0.1-security",
     "groq-sdk": "^0.17.0",
     "html-to-docx": "^1.8.0",
-    "joi": "^18.0.0",
+    "joi": "^18.0.1",
     "jsdom": "^26.0.0",
     "jsonwebtoken": "^9.0.2",
     "jspdf": "^3.0.1",
