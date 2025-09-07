@@ -12,6 +12,17 @@ import {AppError} from '../utils/errorHandler.js';
   }
 }
 
+export async function getUserIdResume(req, res, next) {
+  try {
+    const resume = await resumeService.getResumeByUserId(req.params.id)
+    if(!resume) return next(new AppError('Resume not found', 404));
+  } catch (error) {
+    
+  next(new AppError(error.message, 400));
+    
+  }
+}
+
   export async function getResume(req, res, next) {
     try {
       const resume = await resumeService.getResume(req.params.id);

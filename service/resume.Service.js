@@ -5,6 +5,9 @@ export async function createResume(data) {
   return await resume.save();
 }
 
+export async function getResumeByUserId(userId) {
+  return await Resume.findOne({ user: userId });
+}
   export  async function getResume( resumeId) {
     return await Resume.findOne({ _id: resumeId});
   }
