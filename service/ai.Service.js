@@ -10,13 +10,7 @@ const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 export async function suggestJobDescription(workExp) {
   
   const prompt = `
-You are an expert resume writer tasked with creating a professional job description for a resume. Based on the following user data from a resume:
-- Job Title: "${workExp.position}"
-- Company Name: "${workExp.companyName}"
-- Date Range: ${dateRange}
-- Existing Description: "${existingDescription}"
-
-Generate 5 to 10 concise, impactful, and results-oriented sentences describing key responsibilities and achievements for the role. Ensure the sentences are:
+You are an expert resume writer tasked with creating a professional job description for a resume. Based on the any types of jobs .Generate 5 to 10 concise, impactful, and results-oriented sentences describing key responsibilities and achievements for the role. Ensure the sentences are:
 - Tailored to the job title, company context, and any existing description provided.
 - Professional, using strong action verbs and avoiding generic or vague phrases.
 - Focused on measurable outcomes or significant contributions where applicable.
