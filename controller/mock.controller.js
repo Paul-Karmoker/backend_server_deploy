@@ -65,49 +65,69 @@ export const extractText = async (req, res) => {
   }
 };
 
+
 export const generateQuestions = async (req, res) => {
   try {
     const { text } = req.body;
     if (!text) {
-      return res.status(400).json({ error: 'Text content is required' });
+      return res.status(400).json({ error: "Text content is required" });
     }
 
-    const prompt = `Based on the following job description, generate exactly 5 interview questions: 3 technical questions that test specific skills and knowledge required for the role, and 2 scenario-based questions that assess problem-solving and behavioral fit. Make the questions relevant, concise, and tailored to the key responsibilities, requirements, and technologies mentioned in the description.
+    const prompt = `
+      Based on the following job description, generate exactly 5 interview Q&A pairs:
+      - 3 technical questions that test specific skills/knowledge required for the role
+      - 2 scenario-based questions that assess problem-solving and behavioral fit.
 
-Output the response strictly in JSON format as an array of objects, each with:
-- "type": "technical" or "scenario"
-- "question": the question text
+      Each item must be in JSON format with the following keys:
+      - "type": "technical" or "scenario"
+      - "question": the interview question
+      - "answer": a concise, relevant, and well-structured model answer
 
-Job description:\n\n${text}`;
-    
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' }); // Corrected model name assumption; adjust if needed
+      Output strictly as a JSON array of 5 objects. 
+      No explanations, no markdown, no extra text.
+
+      Job description:\n\n${text}
+    `;
+
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const generatedText = response.text();
 
-    // Parse the JSON output
     let questions;
     try {
-      // Clean up potential markdown or extra text
-      const jsonString = generatedText.replace(/```json\n?|\n?```/g, '').trim();
+      // Strip possible markdown fencing
+      const jsonString = generatedText.replace(/```json\n?|\n?```/g, "").trim();
       questions = JSON.parse(jsonString);
+
       if (!Array.isArray(questions) || questions.length !== 5) {
-        throw new Error('Invalid questions format');
+        throw new Error("Invalid questions format");
       }
+
+      // Validate fields
+      questions.forEach((q, i) => {
+        if (!q.type || !q.question || !q.answer) {
+          throw new Error(`Missing fields in question ${i + 1}`);
+        }
+      });
     } catch (parseError) {
-      console.error('Error parsing questions:', parseError);
-      return res.status(500).json({ error: 'Failed to parse generated questions' });
+      console.error("Error parsing Q&A:", parseError, generatedText);
+      return res.status(500).json({
+        error: "Failed to parse generated Q&A",
+        raw: generatedText,
+      });
     }
 
     res.json({ questions });
   } catch (error) {
-    console.error('Error generating questions:', error);
-    res.status(500).json({ 
-      error: 'Failed to generate questions',
-      details: error.message 
+    console.error("Error generating Q&A:", error);
+    res.status(500).json({
+      error: "Failed to generate Q&A",
+      details: error.message,
     });
   }
 };
+
 
 export const analyzeAnswers = async (req, res) => {
   try {

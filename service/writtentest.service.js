@@ -181,7 +181,6 @@ export const getResult = async (sessionId) => {
     session.status = 'expired';
     await session.save();
   }
-
   return session;
 };
 

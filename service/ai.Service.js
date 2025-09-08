@@ -28,6 +28,29 @@ Return only the bullet points, no extra text.
   return cleanSentences(text);
 }
 
+
+// === 4. Suggest Career Objective ===
+export async function suggestCareerObjective(data) {
+  const work = data.workExperiences
+    .map((exp) => `${exp.position} at ${exp.companyName}`)
+    .join(", ");
+
+  const education = data.education
+    .map((edu) => `${edu.degree} in ${edu.fieldOfStudy} from ${edu.institutionName}`)
+    .join(", ");
+
+  const prompt = `
+Write a professional career objective for a resume.
+Base it on work experiences: ${work || "No work experience"}
+and education: ${education || "No education info"}.
+Keep it 3–4 sentences, focused on career goals, ambition, and contribution.
+Return only the sentences, no extra explanation.
+`;
+
+  const result = await model.generateContent(prompt);
+  return result.response.text().trim();
+}
+
 // === 2. Suggest Skills ===
 export async function suggestSkills(workExperiences) {
   const summary = workExperiences
