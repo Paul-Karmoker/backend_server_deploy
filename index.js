@@ -13,7 +13,7 @@ import Docx from './route/doc.routes.js';
 import Interview from './route/mock.routes.js';
 //import Excel from './route/excel.routes.js';
 import Qa from './route/qa.routes.js';
-import Insm from './route/insm.routes.js'
+import Insm from './route/insm.routes.js';
 import AuthRoute from './route/user.auth.route.js';
 import AdminAuthRoute from './route/admin.auth.routes.js';
 import Bkash from './route/bkash.routes.js';
