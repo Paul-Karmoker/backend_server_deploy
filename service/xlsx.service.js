@@ -20,7 +20,7 @@ const SUPPORTED_FILE_TYPES = [
   'application/vnd.ms-excel',
   'text/plain'
 ];
-const DEFAULT_AI_MODEL = "gemini-2.0-flash";
+const DEFAULT_AI_MODEL = "gemini-3-flash-preview";
 const TEMP_DIR = path.join(process.cwd(), 'temp');
 
 class ExcelGenerationService {

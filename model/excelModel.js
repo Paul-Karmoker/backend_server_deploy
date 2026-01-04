@@ -6,7 +6,7 @@ import * as XLSX from 'xlsx';
 
 // Initialize Google Generative AI
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
 
 // Helper function to extract text from different file types
 export async function extractTextFromFile(file) {
