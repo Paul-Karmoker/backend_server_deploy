@@ -89,7 +89,7 @@ export const generateQuestions = async (req, res) => {
       Job description:\n\n${text}
     `;
 
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const generatedText = response.text();
@@ -150,7 +150,7 @@ Output strictly in JSON format with:
 
 Answers:\n\n${JSON.stringify(answers)}`;
     
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' }); // Corrected model name assumption; adjust if needed
+    const model = genAI.getGenerativeModel({ model: 'gemini-3-flash-preview' }); // Corrected model name assumption; adjust if needed
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const output = response.text();

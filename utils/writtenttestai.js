@@ -6,7 +6,7 @@ import Groq from "groq-sdk";
 let geminiModel = null;
 if (process.env.GOOGLE_API_KEY) {
   const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
-  geminiModel = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+  geminiModel = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
 }
 
 // ---------- Groq (FREE fallback) ----------

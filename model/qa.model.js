@@ -35,7 +35,7 @@ export const generateQuestions = async ({
   requirements 
 }) => {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
 
     const prompt = `
       You are an expert interview question generator. Follow these instructions precisely:
