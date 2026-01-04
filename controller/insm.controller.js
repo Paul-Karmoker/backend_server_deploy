@@ -84,7 +84,7 @@ export const generateQuestions = async (req, res) => {
       return res.status(400).json({ error: 'Job description or document is required' });
     }
     
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
     
     let prompt;
     if (practiceMode === 'full') {

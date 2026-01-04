@@ -4,8 +4,6 @@ import { protect, authorizeRoles } from '../utils/auth.middleware.js';
 
 const router = express.Router();
 
-//router.use(authMiddleware); // Protect all routes
-
 router.post('/', protect, authorizeRoles('user'), resumeController.createResume);
 router.get('/:userId', protect, resumeController.getUserIdResume)
 router.get('/:id',protect, authorizeRoles('user'), resumeController.getResume);
