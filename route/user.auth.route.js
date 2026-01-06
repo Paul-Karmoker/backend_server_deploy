@@ -11,7 +11,8 @@ router.post('/signup',           authCtrl.signUp);
 router.post('/login',            authCtrl.login);
 router.post('/forgot-password',  authCtrl.forgotPassword);
 router.post('/reset-password',   authCtrl.resetPassword);
-router.get ('/verify-email',     authCtrl.verifyEmail);
+router.post('/verify-email-otp', authCtrl.verifyEmailOtp);
+router.post('/resend-email-otp', authCtrl.resendEmailOtp);
 
 // Protected routes
 router.patch('/profile', protect, authorizeRoles('user'), authCtrl.updateProfile);

@@ -23,6 +23,7 @@ import ResumeRouter from './route/resume.routes.js';
 
 
 const app = express();
+
 app.use('/public', express.static(path.join(process.cwd(), 'public')));
 dotenv.config();
 

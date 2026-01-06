@@ -8,15 +8,29 @@ import { calculateReferralPoints, calculateSubscriptionDuration } from '../utils
 const {
   JWT_SECRET,
   CLIENT_URL,
-  BASE_URL,
 } = process.env;
 
-// Utility: Generate a 5-character referral code
+/* ─────────────────────────────
+   OTP & SECURITY CONFIG
+───────────────────────────── */
+const OTP_EXP_MIN = 10;           // minutes
+const OTP_RESEND_COOLDOWN = 60;   // seconds
+const OTP_MAX_ATTEMPTS = 5;
+
+/* ─────────────────────────────
+   UTILITY FUNCTIONS
+───────────────────────────── */
+const hash = (v) =>
+  crypto.createHash('sha256').update(v).digest('hex');
+
+const genOtp = () =>
+  Math.floor(100000 + Math.random() * 900000).toString();
+
+// Referral Code
 function generateReferralCode() {
   return Math.random().toString(36).substring(2, 7).toUpperCase();
 }
 
-// Ensure the referral code is unique in the DB
 async function getUniqueReferralCode() {
   let code = generateReferralCode();
   while (await UserModel.exists({ referralCode: code })) {
@@ -25,127 +39,84 @@ async function getUniqueReferralCode() {
   return code;
 }
 
-// Generate Access Token
-function generateAccessToken(userId) {
-  return jwt.sign({ id: userId }, JWT_SECRET, { expiresIn: '1h' });
-}
+// JWT helpers
+const generateAccessToken = (id) =>
+  jwt.sign({ id }, JWT_SECRET, { expiresIn: '1h' });
 
-// Generate Refresh Token
-function generateRefreshToken(userId) {
-  return jwt.sign({ id: userId }, JWT_SECRET, { expiresIn: '7d' });
-}
+const generateRefreshToken = (id) =>
+  jwt.sign({ id }, JWT_SECRET, { expiresIn: '7d' });
 
-// ─────────────────────────────
-// Sign Up
-// ─────────────────────────────
+/* ─────────────────────────────
+   SIGN UP (OTP BASED)
+───────────────────────────── */
 export async function signUp({ firstName, lastName, email, password, referralCode }) {
   if (!firstName?.trim() || !lastName?.trim() || !email?.trim() || !password?.trim()) {
     throw new Error('First name, last name, email, and password are required');
   }
 
-  if (await UserModel.exists({ email: email.trim().toLowerCase() })) {
+  email = email.trim().toLowerCase();
+
+  if (await UserModel.exists({ email })) {
     throw new Error('Email already in use');
   }
 
+  // Referral logic (unchanged)
   let referredBy = null;
   if (referralCode) {
     const referrer = await UserModel.findOne({ referralCode });
-    if (!referrer) {
-      throw new Error('Invalid referral code');
-    }
+    if (!referrer) throw new Error('Invalid referral code');
     referredBy = referrer._id;
-    // No points awarded during signup
   }
 
+  // Trial logic (unchanged)
   const uniqueCode = await getUniqueReferralCode();
-  const verificationToken = crypto.randomBytes(20).toString('hex');
-  const verificationExpires = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
+  const trialExpires = dayjs().add(7, 'day').toDate();
 
-  const now = new Date();
-  const trialExpires = dayjs(now).add(7, 'day').toDate();
+  // OTP generation
+  const otp = genOtp();
+  const otpHash = hash(otp);
 
+  // Create user
   const newUser = await UserModel.create({
     firstName: firstName.trim(),
     lastName: lastName.trim(),
-    email: email.trim().toLowerCase(),
-    password, // hashed in schema pre-save
+    email,
+    password, // hashed by schema hook
     referralCode: uniqueCode,
-    points: 0,
-    subscriptionPlan: 'trial',
-    subscriptionType: 'freeTrial',
-    freeTrialExpiresAt: trialExpires,
-    emailVerificationToken: verificationToken,
-    emailVerificationExpires: verificationExpires,
     referredBy,
+    points: 0,
+
+    subscriptionType: 'freeTrial',
+    subscriptionPlan: 'trial',
+    freeTrialExpiresAt: trialExpires,
+
+    emailOtp: otpHash,
+    emailOtpExpires: Date.now() + OTP_EXP_MIN * 60 * 1000,
+    emailOtpAttempts: 0,
+    emailOtpLastSentAt: Date.now(),
+    isVerified: false,
   });
 
-  // Generate Tokens
+  // Tokens (unchanged behaviour)
   const accessToken = generateAccessToken(newUser._id);
   const refreshToken = generateRefreshToken(newUser._id);
-
-  // Store Refresh Token in DB
   newUser.refreshTokens.push({ token: refreshToken });
   await newUser.save();
 
-  const ttlSec = Math.floor((trialExpires.getTime() - now.getTime()) / 1000);
-  const token = jwt.sign({ id: newUser._id }, JWT_SECRET, { expiresIn: `${ttlSec}s` });
-
-  const verifyUrl = `${BASE_URL}/api/v1/auth/verify-email?token=${verificationToken}`;
-  const html = `
-    <!DOCTYPE html>
-    <html lang="en" style="margin:0; padding:0; font-family:Arial, sans-serif; background-color:#f4f4f4;">
-    <head>
-      <meta charset="UTF-8" />
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>Email Verification</title>
-    </head>
-    <body style="margin:0; padding:0; background-color:#f4f4f4;">
-      <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f4; padding: 40px 0;">
-        <tr>
-          <td align="center">
-            <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff; border-radius:8px; overflow:hidden; box-shadow:0 0 10px rgba(0,0,0,0.1);">
-              <tr>
-                <td style="background-color:#28a745; padding:20px 30px; color:#ffffff; text-align:center;">
-                  <h1 style="margin:0; font-size:24px;">Welcome to Our Service!</h1>
-                </td>
-              </tr>
-              <tr>
-                <td style="padding:30px;">
-                  <h2 style="color:#333333;">Hi ${newUser.firstName},</h2>
-                  <p style="color:#555555; font-size:16px;">
-                    Thank you for signing up! Please verify your email address to get started.
-                  </p>
-                  <p style="text-align:center; margin: 30px 0;">
-                    <a href="${verifyUrl}" style="display:inline-block; padding:12px 24px; background-color:#28a745; color:#ffffff; text-decoration:none; border-radius:5px; font-size:16px;">Verify Email</a>
-                  </p>
-                  <p style="color:#888888; font-size:14px;">
-                    If the button above doesn't work, please copy and paste the following URL into your browser:
-                  </p>
-                  <p style="word-break:break-all; color:#555555; font-size:14px;">
-                    <a href="${verifyUrl}" style="color:#28a745;">${verifyUrl}</a>
-                  </p>
-                  <hr style="margin:30px 0; border:none; border-top:1px solid #eeeeee;" />
-                  <p style="color:#aaaaaa; font-size:12px; text-align:center;">
-                    If you did not sign up for this account, you can ignore this email.
-                  </p>
-                </td>
-              </tr>
-              <tr>
-                <td style="background-color:#f0f0f0; padding:20px; text-align:center; color:#999999; font-size:12px;">
-                  © ${new Date().getFullYear()} Your Company. All rights reserved.
-                </td>
-              </tr>
-            </table>
-          </td>
-        </tr>
-      </table>
-    </body>
-  </html>
-  `;
-  await sendEmail(newUser.email, 'Verify your email address', html);
+  // Send OTP email
+  await sendEmail(
+    newUser.email,
+    'Verify your email (OTP)',
+    `
+      <h2>Email Verification</h2>
+      <p>Your verification code:</p>
+      <h1 style="letter-spacing:3px;">${otp}</h1>
+      <p>This code will expire in ${OTP_EXP_MIN} minutes.</p>
+    `
+  );
 
   return {
-    message: 'Signed up successfully. Please verify your email.',
+    message: 'Signed up successfully. Please verify your email using OTP.',
     user: {
       id: newUser._id,
       firstName: newUser.firstName,
@@ -153,37 +124,108 @@ export async function signUp({ firstName, lastName, email, password, referralCod
     },
     accessToken,
     refreshToken,
-    token,
   };
 }
 
-// ─────────────────────────────
-// Verify Email
-// ─────────────────────────────
-export async function verifyEmail(token) {
-  if (!token?.trim()) throw new Error('Token is required');
+/* ─────────────────────────────
+   VERIFY EMAIL OTP
+───────────────────────────── */
+export async function verifyEmailOtp(email, otp) {
+  if (!email?.trim() || !otp?.trim()) {
+    throw new Error('Email and OTP are required');
+  }
 
-  const user = await UserModel.findOne({
-    emailVerificationToken: token,
-    emailVerificationExpires: { $gt: Date.now() },
-  });
+  const user = await UserModel.findOne({ email: email.toLowerCase() });
+  if (!user) throw new Error('User not found');
 
-  if (!user) throw new Error('Invalid or expired token');
+  if (user.isVerified) throw new Error('Email already verified');
+
+  if (user.emailOtpAttempts >= OTP_MAX_ATTEMPTS) {
+    throw new Error('Too many invalid attempts');
+  }
+
+  if (!user.emailOtp || user.emailOtpExpires < Date.now()) {
+    throw new Error('OTP expired');
+  }
+
+  if (hash(otp) !== user.emailOtp) {
+    user.emailOtpAttempts += 1;
+    await user.save();
+    throw new Error('Invalid OTP');
+  }
 
   user.isVerified = true;
-  user.emailVerificationToken = undefined;
-  user.emailVerificationExpires = undefined;
+  user.emailOtp = undefined;
+  user.emailOtpExpires = undefined;
+  user.emailOtpAttempts = 0;
   await user.save();
 
-  return {
-    message: 'Email verified successfully',
-    user: {
-      id: user._id,
-      firstName: user.firstName,
-      email: user.email,
-    },
-  };
+  return { message: 'Email verified successfully' };
 }
+
+/* ─────────────────────────────
+   RESEND EMAIL OTP
+───────────────────────────── */
+export async function resendEmailOtp(email) {
+  if (!email?.trim()) throw new Error('Email is required');
+
+  const user = await UserModel.findOne({ email: email.toLowerCase() });
+  if (!user) throw new Error('User not found');
+
+  if (user.isVerified) throw new Error('Email already verified');
+
+  const now = Date.now();
+  if (
+    user.emailOtpLastSentAt &&
+    (now - user.emailOtpLastSentAt) / 1000 < OTP_RESEND_COOLDOWN
+  ) {
+    throw new Error('Please wait before requesting another OTP');
+  }
+
+  const otp = genOtp();
+
+  user.emailOtp = hash(otp);
+  user.emailOtpExpires = now + OTP_EXP_MIN * 60 * 1000;
+  user.emailOtpAttempts = 0;
+  user.emailOtpLastSentAt = now;
+  await user.save();
+
+  await sendEmail(
+    user.email,
+    'Resend Email Verification OTP',
+    `<h1>${otp}</h1><p>Valid for ${OTP_EXP_MIN} minutes</p>`
+  );
+
+  return { message: 'A new OTP has been sent to your email' };
+}
+
+
+
+
+// export async function verifyEmail(token) {
+//   if (!token?.trim()) throw new Error('Token is required');
+
+//   const user = await UserModel.findOne({
+//     emailVerificationToken: token,
+//     emailVerificationExpires: { $gt: Date.now() },
+//   });
+
+//   if (!user) throw new Error('Invalid or expired token');
+
+//   user.isVerified = true;
+//   user.emailVerificationToken = undefined;
+//   user.emailVerificationExpires = undefined;
+//   await user.save();
+
+//   return {
+//     message: 'Email verified successfully',
+//     user: {
+//       id: user._id,
+//       firstName: user.firstName,
+//       email: user.email,
+//     },
+//   };
+// }
 
 // ─────────────────────────────
 // Login

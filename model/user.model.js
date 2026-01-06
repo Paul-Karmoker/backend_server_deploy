@@ -23,10 +23,12 @@ const userSchema = new Schema(
       default: 'user',
     },
 
-    // ── Email Verification
-    isVerified:              { type: Boolean, default: false },
-    emailVerificationToken:  { type: String },
-    emailVerificationExpires:{ type: Date },
+    // OTP Verification
+   emailOtp: String,
+   emailOtpExpires: Date,
+   emailOtpAttempts: { type: Number, default: 0 },
+   emailOtpLastSentAt: Date,
+   isVerified: { type: Boolean, default: false },
 
     // ── Password Reset
     passwordResetToken:      { type: String },
