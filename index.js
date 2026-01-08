@@ -16,7 +16,7 @@ import Qa from './route/qa.routes.js';
 import Insm from './route/insm.routes.js';
 import AuthRoute from './route/user.auth.route.js';
 import AdminAuthRoute from './route/admin.auth.routes.js';
-import Bkash from './route/bkash.routes.js';
+import Bkash from './route/payment.routes.js';
 import WrittenTest from './route/writtentest.routes.js';
 
 import ResumeRouter from './route/resume.routes.js';
@@ -52,7 +52,7 @@ app.use("/qa", Qa);
 app.use("/api/v1/insm", Insm);
 app.use('/api/v1/auth', AuthRoute);
 app.use('/api/v1/admin', AdminAuthRoute);
-app.use('/api/v1/bkash', Bkash);
+app.use('/api/v1/payment', Bkash);
 app.use("/api/v1/resume", ResumeRouter);
 
 

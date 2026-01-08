@@ -1,5 +1,5 @@
-import mongoose from 'mongoose';
-import bcrypt from 'bcrypt';
+import mongoose from "mongoose";
+import bcrypt from "bcrypt";
 
 const { Schema } = mongoose;
 
@@ -9,30 +9,36 @@ const userSchema = new Schema(
     // Basic Information
     // ─────────────────────────────
     firstName: { type: String, required: true, trim: true },
-    lastName:  { type: String, required: true, trim: true },
-    email:     { type: String, required: true, unique: true, lowercase: true, trim: true },
-    photo:     { type: String },
+    lastName: { type: String, required: true, trim: true },
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
+      trim: true,
+    },
+    photo: { type: String },
 
     // ─────────────────────────────
     // Authentication & Security
     // ─────────────────────────────
-    password:  { type: String, required: true },
+    password: { type: String, required: true },
     role: {
       type: String,
-      enum: ['user', 'admin'],
-      default: 'user',
+      enum: ["user", "admin"],
+      default: "user",
     },
 
     // OTP Verification
-   emailOtp: String,
-   emailOtpExpires: Date,
-   emailOtpAttempts: { type: Number, default: 0 },
-   emailOtpLastSentAt: Date,
-   isVerified: { type: Boolean, default: false },
+    emailOtp: String,
+    emailOtpExpires: Date,
+    emailOtpAttempts: { type: Number, default: 0 },
+    emailOtpLastSentAt: Date,
+    isVerified: { type: Boolean, default: false },
 
     // ── Password Reset
-    passwordResetToken:      { type: String },
-    passwordResetExpires:    { type: Date },
+    passwordResetToken: { type: String },
+    passwordResetExpires: { type: Date },
 
     // ─────────────────────────────
     // Referral & Points System
@@ -40,40 +46,44 @@ const userSchema = new Schema(
     referralCode: { type: String, required: true, unique: true },
     referralEnabled: { type: Boolean, default: false },
     points: { type: Number, default: 0 },
-    referredBy:       { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-   
+    referredBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
 
     // ─────────────────────────────
     // Subscription System
     // ─────────────────────────────
     subscriptionType: {
       type: String,
-      enum: ['freeTrial', 'premium']
+      enum: ["freeTrial", "premium", "none"],
+      default: "freeTrial",
     },
     subscriptionPlan: {
       type: String,
-      enum: ['trial','monthly', 'quarterly', 'semiannual', 'yearly']
+      enum: ["trial", "monthly", "quarterly", "semiannual", "yearly"],
     },
     provider: {
-  type: String,
-  enum: ['local', 'google', 'facebook', 'linkedin'],
-  default: 'local'
-},
-socialId: { type: String },
+      type: String,
+      enum: ["local", "google", "facebook", "linkedin"],
+      default: "local",
+    },
+    socialId: { type: String },
     paymentId: { type: String },
     transactionId: { type: String },
-    paymentProvider: { type: String, enum: ['bkash', 'nagad'] },
+    paymentProvider: { type: String, enum: ["bkash", "nagad"] },
     paymentNumber: { type: String },
     amount: { type: Number },
-    subscriptionStatus: { type: String, enum: ['pending', 'active', 'expired'], default: 'pending' },
-    freeTrialExpiresAt:    { type: Date, required: true },
+    subscriptionStatus: {
+      type: String,
+      enum: ["pending", "active", "expired"],
+      default: "pending",
+    },
+    freeTrialExpiresAt: { type: Date, required: true },
     subscriptionExpiresAt: { type: Date },
 
     // ─────────────────────────────
     // Contact Details (Optional)
     // ─────────────────────────────
     mobileNumber: { type: String, trim: true },
-    address:      { type: String, trim: true },
+    address: { type: String, trim: true },
 
     // ─────────────────────────────
     // Soft Delete Fields
@@ -81,10 +91,12 @@ socialId: { type: String },
     isDeleted: { type: Boolean, default: false },
     deletedAt: { type: Date },
     // ─── Refresh Tokens ─────────────────────
-    refreshTokens: [{
-      token: { type: String, required: true },
-      createdAt: { type: Date, default: Date.now }
-    }],
+    refreshTokens: [
+      {
+        token: { type: String, required: true },
+        createdAt: { type: Date, default: Date.now },
+      },
+    ],
   },
   {
     timestamps: true,
@@ -94,8 +106,8 @@ socialId: { type: String },
 // ─────────────────────────────
 // Hooks
 // ─────────────────────────────
-userSchema.pre('save', async function (next) {
-  if (this.isModified('password')) {
+userSchema.pre("save", async function (next) {
+  if (this.isModified("password")) {
     const saltRounds = 10;
     this.password = await bcrypt.hash(this.password, saltRounds);
   }
@@ -121,5 +133,5 @@ userSchema.methods.softDelete = async function () {
 // ─────────────────────────────
 // Model Export
 // ─────────────────────────────
-const User = mongoose.models.User || mongoose.model('User', userSchema);
+const User = mongoose.models.User || mongoose.model("User", userSchema);
 export default User;
