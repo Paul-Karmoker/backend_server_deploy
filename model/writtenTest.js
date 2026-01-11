@@ -18,7 +18,7 @@ const questionSchema = new mongoose.Schema(
 
 const testSessionSchema = new mongoose.Schema(
   {
-    //userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
 
     jobTitle: { type: String, trim: true, required: true },
     experienceYears: { type: Number, default: 0, min: 0 },

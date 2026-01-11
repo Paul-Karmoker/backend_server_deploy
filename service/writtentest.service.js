@@ -17,29 +17,25 @@ async function ensureActiveAndNotExpired(session) {
   }
 }
 
-/** AI: Question generation */
+/** AI helpers */
 async function callAIForQuestions(prompt) {
   let text = await generateAIText(prompt);
   let parsed = tryParseJsonStrict(text);
 
   if (!parsed?.questions || parsed.questions.length !== 5) {
-    const retryPrompt = `${prompt}
-
-IMPORTANT: Return ONLY valid JSON with array "questions" of length 5.`;
-    text = await generateAIText(retryPrompt);
+    text = await generateAIText(`${prompt}
+IMPORTANT: Return ONLY valid JSON with array "questions" of length 5.`);
     parsed = tryParseJsonStrict(text);
   }
   return parsed;
 }
 
-/** AI: Grading */
 async function callAIForGrade(prompt) {
   let text = await generateAIText(prompt);
   let parsed = tryParseJsonStrict(text);
 
   if (!parsed || typeof parsed.score !== 'number') {
     text = await generateAIText(`${prompt}
-
 IMPORTANT: Return ONLY JSON with fields is_correct, score, feedback, corrected_answer.`);
     parsed = tryParseJsonStrict(text);
   }
@@ -48,12 +44,15 @@ IMPORTANT: Return ONLY JSON with fields is_correct, score, feedback, corrected_a
 
 /** Step 1: Init session */
 export const initSession = async ({
+  userId,
   jobTitle,
   experienceYears,
   skills = [],
   jobDescription,
   durationMinutes = 20
 }) => {
+  if (!userId) throw new Error('userId is required');
+
   const prompt = questionGenSystemPrompt({
     jobTitle,
     experienceYears,
@@ -77,6 +76,7 @@ export const initSession = async ({
   }));
 
   return TestSession.create({
+    userId,
     jobTitle,
     experienceYears,
     skills,
@@ -95,8 +95,9 @@ export const startSession = async (sessionId) => {
 
   const now = new Date();
   session.startedAt = now;
-  session.expiresAt = new Date(now.getTime() + session.durationMinutes * 60 * 1000);
+  session.expiresAt = new Date(now.getTime() + session.durationMinutes * 60000);
   session.status = 'active';
+
   await session.save();
   return session;
 };
@@ -109,7 +110,7 @@ export const getCurrentQuestion = async (sessionId) => {
   const q = session.questions[session.currentQuestion];
   const remainingSeconds = Math.max(
     0,
-    Math.floor((new Date(session.expiresAt).getTime() - Date.now()) / 1000)
+    Math.floor((session.expiresAt.getTime() - Date.now()) / 1000)
   );
 
   return {
@@ -135,14 +136,13 @@ export const submitAnswer = async ({ sessionId, answer }) => {
   });
 
   const graded = await callAIForGrade(prompt);
-  if (!graded) throw new Error('AI grading failed');
 
   q.userAnswer = answer || '';
   q.feedback = graded.feedback || '';
   q.isCorrect = !!graded.is_correct;
   q.score = graded.score === 1 ? 1 : 0;
 
-  session.totalScore = (session.totalScore || 0) + q.score;
+  session.totalScore += q.score;
   session.currentQuestion += 1;
 
   if (session.currentQuestion >= session.questions.length) {
@@ -151,5 +151,13 @@ export const submitAnswer = async ({ sessionId, answer }) => {
   }
 
   await session.save();
+  return session;
+};
+
+export const getResult = async (sessionId) => {
+  const session = await TestSession.findById(sessionId)
+    .populate('userId', 'name email');
+
+  if (!session) throw new Error('Session not found');
   return session;
 };
