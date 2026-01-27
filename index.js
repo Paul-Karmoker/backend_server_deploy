@@ -57,7 +57,7 @@ app.use("/api/v1/resume", ResumeRouter);
 
 
 app.get("/", (req, res) => {
-  res.send("Hello World!");
+  res.send("API is running successfully");
 })
 
 app.use(session({
