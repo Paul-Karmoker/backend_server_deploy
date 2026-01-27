@@ -5,23 +5,42 @@ import {AppError} from '../utils/errorHandler.js';
 
   export async function createResume(req, res, next) {
   try {
-    const resume = await resumeService.createResume(req.body);
-    res.status(201).json({ status: 'success', data: resume });
+    const resume = await resumeService.createResume({
+      ...req.body,
+      user: req.user._id, // 🔥 MUST
+    });
+
+    res.status(201).json({
+      status: "success",
+      data: resume,
+    });
   } catch (error) {
     next(new AppError(error.message, 400));
   }
 }
 
-export async function getUserIdResume(req, res, next) {
+
+// controller/resume.Controller.js
+export async function getMyResume(req, res, next) {
   try {
-    const resume = await resumeService.getResumeByUserId(req.params.id)
-    if(!resume) return next(new AppError('Resume not found', 404));
+    const resume = await resumeService.getResumeByUserId(req.user._id);
+
+    if (!resume) {
+      return next(new AppError("Resume not found", 404));
+    }
+
+    res.status(200).json({
+      status: "success",
+      data: resume,
+    });
   } catch (error) {
-    
-  next(new AppError(error.message, 400));
-    
+    next(new AppError(error.message, 400));
   }
 }
+
+
+
+
 
   export async function getResume(req, res, next) {
     try {

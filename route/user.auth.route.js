@@ -18,7 +18,7 @@ router.post('/resend-email-otp', authCtrl.resendEmailOtp);
 router.patch('/profile', protect, authorizeRoles('user'), authCtrl.updateProfile);
 router.get('/get-profile', protect, authorizeRoles('user'), authCtrl.getProfile);
 router.patch('/change-password', protect,authorizeRoles('user') , authCtrl.changePassword);
-router.post('/subcribe', protect,authorizeRoles('user') , authCtrl.subscribe);
+//router.post('/subcribe', protect,authorizeRoles('user') , authCtrl.subscribe);
 
 // POST /api/withdrawals
 router.post('/withdraw', protect,authorizeRoles('user') , userWithdrawCtrl.requestWithdrawal);

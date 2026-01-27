@@ -76,7 +76,7 @@ const userSchema = new Schema(
       enum: ["pending", "active", "expired"],
       default: "pending",
     },
-    freeTrialExpiresAt: { type: Date, required: true },
+    freeTrialExpiresAt: { type: Date},
     subscriptionExpiresAt: { type: Date },
 
     // ─────────────────────────────
