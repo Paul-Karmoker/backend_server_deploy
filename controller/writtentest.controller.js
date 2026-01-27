@@ -3,8 +3,23 @@ import * as svc from '../service/writtentest.service.js';
 import { generatePDF } from '../utils/pdf.js';
 
 export const initSession = asyncHandler(async (req, res) => {
-  const { jobTitle, experienceYears, skills, jobDescription, durationMinutes } = req.body;
-  const session = await svc.initSession({ jobTitle, experienceYears, skills, jobDescription, durationMinutes });
+  const {
+    jobTitle,
+    experienceYears,
+    skills,
+    jobDescription,
+    durationMinutes
+  } = req.body;
+
+  const session = await svc.initSession({
+    userId: req.user._id,          // ✅ FIX: userId from auth middleware
+    jobTitle,
+    experienceYears,
+    skills,
+    jobDescription,
+    durationMinutes
+  });
+
   res.status(201).json({
     sessionId: session.id,
     status: session.status,
@@ -15,7 +30,13 @@ export const initSession = asyncHandler(async (req, res) => {
 export const startSession = asyncHandler(async (req, res) => {
   const { sessionId } = req.params;
   const session = await svc.startSession(sessionId);
-  res.json({ sessionId: session.id, status: session.status, startedAt: session.startedAt, expiresAt: session.expiresAt });
+
+  res.json({
+    sessionId: session.id,
+    status: session.status,
+    startedAt: session.startedAt,
+    expiresAt: session.expiresAt
+  });
 });
 
 export const getCurrent = asyncHandler(async (req, res) => {
@@ -51,5 +72,6 @@ export const downloadPdf = asyncHandler(async (req, res) => {
     'Content-Type': 'application/pdf',
     'Content-Disposition': `attachment; filename=exam_${sessionId}.pdf`
   });
+
   res.send(pdfBuffer);
 });

@@ -5,8 +5,16 @@ import { protect, authorizeRoles } from '../utils/auth.middleware.js';
 const router = express.Router();
 
 router.post('/', protect, authorizeRoles('user'), resumeController.createResume);
-router.get('/:userId', protect, resumeController.getUserIdResume)
-router.get('/:id',protect, authorizeRoles('user'), resumeController.getResume);
+
+
+// get logged-in user's resume
+router.get("/me", protect, authorizeRoles("user"), resumeController.getMyResume);
+
+
+// get resume by resumeId
+router.get("/:id", protect, authorizeRoles("user"), resumeController.getResume);
+
+
 router.put('/:id', resumeController.updateResume);
 router.delete('/:id', resumeController.deleteResume);
 

@@ -11,18 +11,19 @@ import coverRoutes from './route/cover.routes.js';
 import PPT from './route/ppt.routes.js';
 import Docx from './route/doc.routes.js';
 import Interview from './route/mock.routes.js';
-//import Excel from './route/excel.routes.js';
+import Excel from './route/excel.routes.js';
 import Qa from './route/qa.routes.js';
 import Insm from './route/insm.routes.js';
 import AuthRoute from './route/user.auth.route.js';
 import AdminAuthRoute from './route/admin.auth.routes.js';
-import Bkash from './route/bkash.routes.js';
+import Bkash from './route/payment.routes.js';
 import WrittenTest from './route/writtentest.routes.js';
 
 import ResumeRouter from './route/resume.routes.js';
 
 
 const app = express();
+
 app.use('/public', express.static(path.join(process.cwd(), 'public')));
 dotenv.config();
 
@@ -31,7 +32,7 @@ const allowedOrigins = [
   'http://localhost:5173',
   'https://crosscareers.com',
   'https://admin-crosscareers.vercel.app',
-  'http://localhost:3000'
+  'http://localhost:3001'
 ];
 
 app.use(cors({
@@ -46,12 +47,12 @@ app.use('/api/v1/ppt', PPT);
 app.use('/api/v1/doc', Docx);
 app.use('/api/v1/interview', Interview);
 app.use("/api/v1/writtenTest", WrittenTest);
-//app.use("/excel", Excel);
+app.use("/api/v1/excel", Excel);
 app.use("/qa", Qa);
 app.use("/api/v1/insm", Insm);
 app.use('/api/v1/auth', AuthRoute);
 app.use('/api/v1/admin', AdminAuthRoute);
-app.use('/api/v1/bkash', Bkash);
+app.use('/api/v1/payment', Bkash);
 app.use("/api/v1/resume", ResumeRouter);
 
 

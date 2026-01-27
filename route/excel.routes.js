@@ -19,7 +19,7 @@ const upload = multer({
 
 // Updated to match frontend expectation
 router.post(
-  '/excel/generate-excel',  // Changed to match what frontend is calling
+  '/generate-excel',  // Changed to match what frontend is calling
   upload.single('file'),
   generateExcel
 );

@@ -1,9 +1,10 @@
 import  Resume from '../model/Resume.js';
 
 export async function createResume(data) {
-  const resume = new Resume({ ...data});
+  const resume = new Resume(data);
   return await resume.save();
 }
+
 
 export async function getResumeByUserId(userId) {
   return await Resume.findOne({ user: userId });
@@ -12,6 +13,20 @@ export async function getResumeByUserId(userId) {
     return await Resume.findOne({ _id: resumeId});
   }
   
+
+  export async function getAllMyResumes(req, res, next) {
+    try {
+      const resumes = await Resume.find({ user: req.user._id });
+  
+      res.status(200).json({
+        status: "success",
+        results: resumes.length,
+        data: resumes,
+      });
+    } catch (error) {
+      next(new AppError(error.message, 400));
+    }
+  }
 
   export  async function updateResume(userId, resumeId, data) {
     return await Resume.findOneAndUpdate(
