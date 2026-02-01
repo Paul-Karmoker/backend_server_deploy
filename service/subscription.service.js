@@ -5,10 +5,10 @@ import User from "../model/user.model.js";
    PLAN AMOUNT MAP
 ───────────────────────────── */
 const PLAN_AMOUNTS = {
-  monthly: 150,
-  quarterly: 260,
-  semiannual: 450,
-  yearly: 520,
+  monthly: 89,
+  quarterly: 199,
+  semiannual: 399,
+  yearly: 599,
 };
 
 /* ─────────────────────────────

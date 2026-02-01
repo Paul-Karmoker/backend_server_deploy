@@ -1,30 +1,28 @@
-import crypto from 'crypto';
-import jwt from 'jsonwebtoken';
-import dayjs from 'dayjs';
-import UserModel from '../model/user.model.js';
-import sendEmail from '../utils/sendEmail.js';
-import { calculateReferralPoints, calculateSubscriptionDuration } from '../utils/subscription.js';
-
-const {
-  JWT_SECRET,
-  CLIENT_URL,
-} = process.env;
+import crypto from "crypto";
+import jwt from "jsonwebtoken";
+import dayjs from "dayjs";
+import UserModel from "../model/user.model.js";
+import sendEmail from "../utils/sendEmail.js";
+import {
+  calculateReferralPoints,
+  calculateSubscriptionDuration,
+} from "../utils/subscription.js";
+import { getAccessLevel } from "../utils/access.util.js";
+const { JWT_SECRET, CLIENT_URL } = process.env;
 
 /* ─────────────────────────────
    OTP & SECURITY CONFIG
 ───────────────────────────── */
-const OTP_EXP_MIN = 10;           // minutes
-const OTP_RESEND_COOLDOWN = 60;   // seconds
+const OTP_EXP_MIN = 10; // minutes
+const OTP_RESEND_COOLDOWN = 60; // seconds
 const OTP_MAX_ATTEMPTS = 5;
 
 /* ─────────────────────────────
    UTILITY FUNCTIONS
 ───────────────────────────── */
-const hash = (v) =>
-  crypto.createHash('sha256').update(v).digest('hex');
+const hash = (v) => crypto.createHash("sha256").update(v).digest("hex");
 
-const genOtp = () =>
-  Math.floor(100000 + Math.random() * 900000).toString();
+const genOtp = () => Math.floor(100000 + Math.random() * 900000).toString();
 
 // Referral Code
 function generateReferralCode() {
@@ -41,42 +39,53 @@ async function getUniqueReferralCode() {
 
 // JWT helpers
 const generateAccessToken = (id) =>
-  jwt.sign({ id }, JWT_SECRET, { expiresIn: '1h' });
+  jwt.sign({ id }, JWT_SECRET, { expiresIn: "1h" });
 
 const generateRefreshToken = (id) =>
-  jwt.sign({ id }, JWT_SECRET, { expiresIn: '7d' });
+  jwt.sign({ id }, JWT_SECRET, { expiresIn: "7d" });
 
 /* ─────────────────────────────
    SIGN UP (OTP BASED)
 ───────────────────────────── */
-export async function signUp({ firstName, lastName, email, password, referralCode }) {
-  if (!firstName?.trim() || !lastName?.trim() || !email?.trim() || !password?.trim()) {
-    throw new Error('First name, last name, email, and password are required');
+export async function signUp({
+  firstName,
+  lastName,
+  email,
+  password,
+  referralCode,
+}) {
+  if (
+    !firstName?.trim() ||
+    !lastName?.trim() ||
+    !email?.trim() ||
+    !password?.trim()
+  ) {
+    throw new Error("First name, last name, email, and password are required");
   }
 
   email = email.trim().toLowerCase();
 
   if (await UserModel.exists({ email })) {
-    throw new Error('Email already in use');
+    throw new Error("Email already in use");
   }
 
-  // Referral logic (unchanged)
+  // ── Referral logic ──
   let referredBy = null;
   if (referralCode) {
     const referrer = await UserModel.findOne({ referralCode });
-    if (!referrer) throw new Error('Invalid referral code');
+    if (!referrer) throw new Error("Invalid referral code");
     referredBy = referrer._id;
   }
 
-  // Trial logic (unchanged)
+  // ── Trial logic ──
   const uniqueCode = await getUniqueReferralCode();
-  const trialExpires = dayjs().add(7, 'day').toDate();
+  const trialExpires = dayjs().add(7, "day").toDate();
 
-  // OTP generation
+  // ── OTP generation ──
   const otp = genOtp();
   const otpHash = hash(otp);
 
-  // Create user
+  // ── Create user (NO TOKEN HERE) ──
   const newUser = await UserModel.create({
     firstName: firstName.trim(),
     lastName: lastName.trim(),
@@ -86,8 +95,8 @@ export async function signUp({ firstName, lastName, email, password, referralCod
     referredBy,
     points: 0,
 
-    subscriptionType: 'freeTrial',
-    subscriptionPlan: 'trial',
+    subscriptionType: "freeTrial",
+    subscriptionPlan: "trial",
     freeTrialExpiresAt: trialExpires,
 
     emailOtp: otpHash,
@@ -97,16 +106,10 @@ export async function signUp({ firstName, lastName, email, password, referralCod
     isVerified: false,
   });
 
-  // Tokens (unchanged behaviour)
-  const accessToken = generateAccessToken(newUser._id);
-  const refreshToken = generateRefreshToken(newUser._id);
-  newUser.refreshTokens.push({ token: refreshToken });
-  await newUser.save();
-
-  // Send OTP email
+  // ── Send OTP email ──
   await sendEmail(
     newUser.email,
-    'Verify your email (OTP)',
+    "Verify your email (OTP)",
     `
       <h2>Email Verification</h2>
       <p>Your verification code:</p>
@@ -115,43 +118,44 @@ export async function signUp({ firstName, lastName, email, password, referralCod
     `
   );
 
+  // ── Response (NO TOKEN) ──
   return {
-    message: 'Signed up successfully. Please verify your email using OTP.',
+    message: "Signed up successfully. Please verify your email using OTP.",
     user: {
       id: newUser._id,
       firstName: newUser.firstName,
       email: newUser.email,
+      freeTrialExpiresAt: newUser.freeTrialExpiresAt,
     },
-    accessToken,
-    refreshToken,
   };
 }
+
 
 /* ─────────────────────────────
    VERIFY EMAIL OTP
 ───────────────────────────── */
 export async function verifyEmailOtp(email, otp) {
   if (!email?.trim() || !otp?.trim()) {
-    throw new Error('Email and OTP are required');
+    throw new Error("Email and OTP are required");
   }
 
   const user = await UserModel.findOne({ email: email.toLowerCase() });
-  if (!user) throw new Error('User not found');
+  if (!user) throw new Error("User not found");
 
-  if (user.isVerified) throw new Error('Email already verified');
+  if (user.isVerified) throw new Error("Email already verified");
 
   if (user.emailOtpAttempts >= OTP_MAX_ATTEMPTS) {
-    throw new Error('Too many invalid attempts');
+    throw new Error("Too many invalid attempts");
   }
 
   if (!user.emailOtp || user.emailOtpExpires < Date.now()) {
-    throw new Error('OTP expired');
+    throw new Error("OTP expired");
   }
 
   if (hash(otp) !== user.emailOtp) {
     user.emailOtpAttempts += 1;
     await user.save();
-    throw new Error('Invalid OTP');
+    throw new Error("Invalid OTP");
   }
 
   user.isVerified = true;
@@ -160,26 +164,26 @@ export async function verifyEmailOtp(email, otp) {
   user.emailOtpAttempts = 0;
   await user.save();
 
-  return { message: 'Email verified successfully' };
+  return { message: "Email verified successfully" };
 }
 
 /* ─────────────────────────────
    RESEND EMAIL OTP
 ───────────────────────────── */
 export async function resendEmailOtp(email) {
-  if (!email?.trim()) throw new Error('Email is required');
+  if (!email?.trim()) throw new Error("Email is required");
 
   const user = await UserModel.findOne({ email: email.toLowerCase() });
-  if (!user) throw new Error('User not found');
+  if (!user) throw new Error("User not found");
 
-  if (user.isVerified) throw new Error('Email already verified');
+  if (user.isVerified) throw new Error("Email already verified");
 
   const now = Date.now();
   if (
     user.emailOtpLastSentAt &&
     (now - user.emailOtpLastSentAt) / 1000 < OTP_RESEND_COOLDOWN
   ) {
-    throw new Error('Please wait before requesting another OTP');
+    throw new Error("Please wait before requesting another OTP");
   }
 
   const otp = genOtp();
@@ -192,15 +196,12 @@ export async function resendEmailOtp(email) {
 
   await sendEmail(
     user.email,
-    'Resend Email Verification OTP',
-    `<h1>${otp}</h1><p>Valid for ${OTP_EXP_MIN} minutes</p>`
+    "Resend Email Verification OTP",
+    `<h1>${otp}</h1><p>Valid for ${OTP_EXP_MIN} minutes</p>`,
   );
 
-  return { message: 'A new OTP has been sent to your email' };
+  return { message: "A new OTP has been sent to your email" };
 }
-
-
-
 
 // export async function verifyEmail(token) {
 //   if (!token?.trim()) throw new Error('Token is required');
@@ -231,30 +232,28 @@ export async function resendEmailOtp(email) {
 // Login
 // ─────────────────────────────
 export async function login({ email, password }) {
-  if (!email?.trim() || !password?.trim()) throw new Error('Email and password are required');
+  if (!email?.trim() || !password?.trim())
+    throw new Error("Email and password are required");
 
   const user = await UserModel.findOne({ email: email.trim().toLowerCase() });
-  if (!user) throw new Error('Invalid credentials');
-  if (!user.isVerified) throw new Error('Please verify your email first');
+  if (!user) throw new Error("Invalid credentials");
+  if (!user.isVerified) throw new Error("Please verify your email first");
 
   const isMatch = await user.comparePassword(password);
-  if (!isMatch) throw new Error('Invalid credentials');
+  if (!isMatch) throw new Error("Invalid credentials");
 
-  const now = new Date();
-  let token;
+  // ✅ NEW – NO AUTO LOGOUT
+  const accessLevel = getAccessLevel(user);
 
-  if (user.subscriptionType === 'freeTrial') {
-    if (user.freeTrialExpiresAt <= now) {
-      throw new Error('Free trial expired. Please subscribe.');
-    }
-    const ttlSec = Math.floor((user.freeTrialExpiresAt.getTime() - now.getTime()) / 1000);
-    token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: `${ttlSec}s` });
-  } else {
-    if (!user.subscriptionExpiresAt || user.subscriptionExpiresAt <= now) {
-      throw new Error('Subscription expired. Please renew.');
-    }
-    token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: '7d' });
-  }
+  const token = jwt.sign(
+    {
+      id: user._id,
+      role: user.role,
+      accessLevel, // FULL | LIMITED
+    },
+    JWT_SECRET,
+    { expiresIn: "7d" }, // 🔥 FIXED lifetime
+  );
 
   const accessToken = generateAccessToken(user._id);
   const refreshToken = generateRefreshToken(user._id);
@@ -263,14 +262,16 @@ export async function login({ email, password }) {
   await user.save();
 
   return {
-    message: 'Login successful',
+    message: "Login successful",
     user: {
       id: user._id,
       firstName: user.firstName,
       email: user.email,
+      subscriptionType: user.subscriptionType,
+      subscriptionStatus: user.subscriptionStatus,
+      freeTrialExpiresAt: user.freeTrialExpiresAt,
+      subscriptionExpiresAt: user.subscriptionExpiresAt,
     },
-    accessToken,
-    refreshToken,
     token,
   };
 }
@@ -279,13 +280,13 @@ export async function login({ email, password }) {
 // Forgot Password
 // ─────────────────────────────
 export async function forgotPassword(email) {
-  if (!email?.trim()) throw new Error('Email is required');
+  if (!email?.trim()) throw new Error("Email is required");
 
   const user = await UserModel.findOne({ email: email.trim().toLowerCase() });
-  if (!user) throw new Error('Email not found');
+  if (!user) throw new Error("Email not found");
 
-  const resetToken = crypto.randomBytes(32).toString('hex');
-  const hashed = crypto.createHash('sha256').update(resetToken).digest('hex');
+  const resetToken = crypto.randomBytes(32).toString("hex");
+  const hashed = crypto.createHash("sha256").update(resetToken).digest("hex");
 
   user.passwordResetToken = hashed;
   user.passwordResetExpires = Date.now() + 60 * 60 * 1000; // 1 hour
@@ -343,25 +344,26 @@ export async function forgotPassword(email) {
     </body>
   </html>
   `;
-  await sendEmail(user.email, 'Reset Your Password', html);
+  await sendEmail(user.email, "Reset Your Password", html);
 
-  return { message: 'Password reset email sent successfully' };
+  return { message: "Password reset email sent successfully" };
 }
 
 // ─────────────────────────────
 // Reset Password
 // ─────────────────────────────
 export async function resetPassword(token, newPassword) {
-  if (!token?.trim() || !newPassword?.trim()) throw new Error('Token and new password are required');
+  if (!token?.trim() || !newPassword?.trim())
+    throw new Error("Token and new password are required");
 
-  const hashed = crypto.createHash('sha256').update(token).digest('hex');
+  const hashed = crypto.createHash("sha256").update(token).digest("hex");
 
   const user = await UserModel.findOne({
     passwordResetToken: hashed,
     passwordResetExpires: { $gt: Date.now() },
   });
 
-  if (!user) throw new Error('Token is invalid or expired');
+  if (!user) throw new Error("Token is invalid or expired");
 
   user.password = newPassword;
   user.passwordResetToken = undefined;
@@ -413,30 +415,31 @@ export async function resetPassword(token, newPassword) {
     </body>
   </html>
   `;
-  await sendEmail(user.email, 'Password Changed', html);
+  await sendEmail(user.email, "Password Changed", html);
 
-  return { message: 'Password reset successfully' };
+  return { message: "Password reset successfully" };
 }
 
 // ─────────────────────────────
 // Change Password
 // ─────────────────────────────
 export async function changePassword(userId, oldPassword, newPassword) {
-  if (!userId || !oldPassword?.trim() || !newPassword?.trim()) throw new Error('User ID, old password, and new password are required');
+  if (!userId || !oldPassword?.trim() || !newPassword?.trim())
+    throw new Error("User ID, old password, and new password are required");
 
   const user = await UserModel.findById(userId);
-  if (!user) throw new Error('User not found');
+  if (!user) throw new Error("User not found");
 
   const isMatch = await user.comparePassword(oldPassword);
-  if (!isMatch) throw new Error('Old password is incorrect');
+  if (!isMatch) throw new Error("Old password is incorrect");
 
   user.password = newPassword;
   await user.save();
 
-  const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: '7d' });
+  const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: "7d" });
 
   return {
-    message: 'Password changed successfully',
+    message: "Password changed successfully",
     user: {
       id: user._id,
       firstName: user.firstName,
@@ -452,20 +455,23 @@ export async function changePassword(userId, oldPassword, newPassword) {
 export async function getUser(userId) {
   const totalreffers = await UserModel.countDocuments({ referredBy: userId });
   const user = await UserModel.findById(userId);
-  if (!user) throw new Error('User not found');
+  if (!user) throw new Error("User not found");
   return user;
 }
 
 // ─────────────────────────────
 // Update Profile
 // ─────────────────────────────
-export async function updateProfile(userId, { firstName, lastName, email, mobileNumber, address, photo }) {
+export async function updateProfile(
+  userId,
+  { firstName, lastName, email, mobileNumber, address, photo },
+) {
   if (!userId || !firstName?.trim() || !lastName?.trim() || !email?.trim()) {
-    throw new Error('User ID, first name, last name, and email are required');
+    throw new Error("User ID, first name, last name, and email are required");
   }
 
   const existing = await UserModel.findOne(userId);
-  if (!existing) throw new Error('User not found');
+  if (!existing) throw new Error("User not found");
   const update = {
     firstName: firstName.trim(),
     lastName: lastName.trim(),
@@ -480,10 +486,10 @@ export async function updateProfile(userId, { firstName, lastName, email, mobile
     runValidators: true,
   });
 
-  if (!user) throw new Error('User not found');
+  if (!user) throw new Error("User not found");
 
   return {
-    message: 'Profile updated successfully',
+    message: "Profile updated successfully",
     user: {
       id: user._id,
       firstName: user.firstName,
@@ -499,20 +505,31 @@ export async function updateProfile(userId, { firstName, lastName, email, mobile
 // ─────────────────────────────
 // Subscribe
 // ─────────────────────────────
-export async function subscribe(userId, {
-  subscriptionPlan,
-  paymentId,
-  transactionId,
-  paymentProvider,
-  paymentNumber,
-  amount
-}) {
-  if (!userId || !subscriptionPlan || !paymentId?.trim() || !transactionId?.trim() || !paymentProvider?.trim() || !paymentNumber?.trim() || !amount) {
-    throw new Error('All subscription fields are required');
+export async function subscribe(
+  userId,
+  {
+    subscriptionPlan,
+    paymentId,
+    transactionId,
+    paymentProvider,
+    paymentNumber,
+    amount,
+  },
+) {
+  if (
+    !userId ||
+    !subscriptionPlan ||
+    !paymentId?.trim() ||
+    !transactionId?.trim() ||
+    !paymentProvider?.trim() ||
+    !paymentNumber?.trim() ||
+    !amount
+  ) {
+    throw new Error("All subscription fields are required");
   }
 
   const user = await UserModel.findById(userId);
-  if (!user) throw new Error('User not found');
+  if (!user) throw new Error("User not found");
 
   const now = new Date();
   let expectedAmount = 0;
@@ -526,24 +543,27 @@ export async function subscribe(userId, {
   };
 
   expectedAmount = planAmounts[subscriptionPlan];
-  if (!expectedAmount) throw new Error('Invalid subscription plan');
+  if (!expectedAmount) throw new Error("Invalid subscription plan");
 
   // Check if amount is correct
   if (amount !== expectedAmount) {
-    throw new Error(`Incorrect amount. Expected ${expectedAmount} for ${subscriptionPlan} plan.`);
+    throw new Error(
+      `Incorrect amount. Expected ${expectedAmount} for ${subscriptionPlan} plan.`,
+    );
   }
 
   // Calculate subscription expiration
   const { unit, value } = calculateSubscriptionDuration(subscriptionPlan);
   const subscriptionExpiresAt = new Date(now);
-  if (unit === 'month') subscriptionExpiresAt.setMonth(now.getMonth() + value);
-  else if (unit === 'year') subscriptionExpiresAt.setFullYear(now.getFullYear() + value);
+  if (unit === "month") subscriptionExpiresAt.setMonth(now.getMonth() + value);
+  else if (unit === "year")
+    subscriptionExpiresAt.setFullYear(now.getFullYear() + value);
 
   // Prepare update data
   const update = {
     subscriptionPlan,
     subscriptionExpiresAt,
-    subscriptionStatus: 'pending', // Admin will approve later
+    subscriptionStatus: "pending", // Admin will approve later
     paymentId: paymentId.trim(),
     transactionId: transactionId.trim(),
     paymentProvider: paymentProvider.trim(),
@@ -556,10 +576,10 @@ export async function subscribe(userId, {
     runValidators: true,
   });
 
-  if (!updatedUser) throw new Error('Failed to update subscription');
+  if (!updatedUser) throw new Error("Failed to update subscription");
 
   // Reward the referrer only for premium subscriptions if referralEnabled is true
-  if (updatedUser.referredBy && subscriptionPlan !== 'freeTrial') {
+  if (updatedUser.referredBy && subscriptionPlan !== "freeTrial") {
     const referrer = await UserModel.findById(updatedUser.referredBy);
     if (referrer && referrer.referralEnabled) {
       const basePoints = calculateReferralPoints(subscriptionPlan);
@@ -570,7 +590,7 @@ export async function subscribe(userId, {
   }
 
   return {
-    message: 'Subscription request submitted successfully',
+    message: "Subscription request submitted successfully",
     user: {
       id: updatedUser._id,
       subscriptionPlan: updatedUser.subscriptionPlan,
@@ -584,28 +604,28 @@ export async function subscribe(userId, {
 // Approve Subscription
 // ─────────────────────────────
 export async function approveSubscription(userId) {
-  if (!userId) throw new Error('User ID is required');
+  if (!userId) throw new Error("User ID is required");
 
   const user = await UserModel.findById(userId);
-  if (!user) throw new Error('User not found');
+  if (!user) throw new Error("User not found");
 
-  if (user.subscriptionStatus !== 'pending') {
-    throw new Error('Subscription is not pending');
+  if (user.subscriptionStatus !== "pending") {
+    throw new Error("Subscription is not pending");
   }
 
   // Define subscription durations based on plan
   const planDurations = {
-    trial: 7,        // 7 days for trial
-    monthly: 30,     // 30 days for monthly
-    quarterly: 90,   // 90 days for quarterly
+    trial: 7, // 7 days for trial
+    monthly: 30, // 30 days for monthly
+    quarterly: 90, // 90 days for quarterly
     semiannual: 180, // 180 days for semiannual
-    yearly: 365      // 365 days for yearly
+    yearly: 365, // 365 days for yearly
   };
 
   // Get the subscription plan from the user
   const subscriptionPlan = user.subscriptionPlan;
   if (!subscriptionPlan || !planDurations[subscriptionPlan]) {
-    throw new Error('Invalid or unsupported subscription plan');
+    throw new Error("Invalid or unsupported subscription plan");
   }
 
   // Calculate expiration date based on plan
@@ -618,28 +638,28 @@ export async function approveSubscription(userId) {
   const updatedUser = await UserModel.findByIdAndUpdate(
     userId,
     {
-      subscriptionStatus: 'active',
-      subscriptionType: 'premium',
-      referralEnabled: 'true',
-      subscriptionExpiresAt: subscriptionExpiresAt
+      subscriptionStatus: "active",
+      subscriptionType: "premium",
+      referralEnabled: "true",
+      subscriptionExpiresAt: subscriptionExpiresAt,
     },
     {
       new: true,
-      runValidators: true
-    }
+      runValidators: true,
+    },
   );
 
-  if (!updatedUser) throw new Error('Failed to approve subscription');
+  if (!updatedUser) throw new Error("Failed to approve subscription");
 
   return {
-    message: 'Subscription approved successfully',
+    message: "Subscription approved successfully",
     user: {
       id: updatedUser._id,
       subscriptionPlan: updatedUser.subscriptionPlan,
       subscriptionStatus: updatedUser.subscriptionStatus,
       subscriptionType: updatedUser.subscriptionType,
       referralEnabled: updatedUser.referralEnabled,
-      subscriptionExpiresAt: updatedUser.subscriptionExpiresAt
-    }
+      subscriptionExpiresAt: updatedUser.subscriptionExpiresAt,
+    },
   };
 }
