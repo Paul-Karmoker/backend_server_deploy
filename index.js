@@ -57,7 +57,7 @@ app.use("/api/v1/resume", ResumeRouter);
 
 
 app.get("/", (req, res) => {
-  res.send("API is running successfully");
+  res.send("crosscareers api is running successfully");
 })
 
 app.use(session({

@@ -42,8 +42,8 @@ const generateAccessToken = (id) =>
   jwt.sign({ id }, JWT_SECRET, { expiresIn: "1h" });
 
 const generateRefreshToken = (id) =>
-  jwt.sign({ id }, JWT_SECRET, { expiresIn: "7d" });
-
+  jwt.sign({ id }, JWT_SECRET, { expiresIn: "3d" });
+const FREE_TRIAL_DAYS = 3;
 /* ─────────────────────────────
    SIGN UP (OTP BASED)
 ───────────────────────────── */
@@ -79,7 +79,7 @@ export async function signUp({
 
   // ── Trial logic ──
   const uniqueCode = await getUniqueReferralCode();
-  const trialExpires = dayjs().add(7, "day").toDate();
+  const trialExpires = dayjs().add(FREE_TRIAL_DAYS, "day").toDate();
 
   // ── OTP generation ──
   const otp = genOtp();
@@ -615,11 +615,11 @@ export async function approveSubscription(userId) {
 
   // Define subscription durations based on plan
   const planDurations = {
-    trial: 7, // 7 days for trial
-    monthly: 30, // 30 days for monthly
-    quarterly: 90, // 90 days for quarterly
-    semiannual: 180, // 180 days for semiannual
-    yearly: 365, // 365 days for yearly
+    trial: 3,
+    monthly: 30,
+    quarterly: 90,
+    semiannual: 180,
+    yearly: 365,
   };
 
   // Get the subscription plan from the user
