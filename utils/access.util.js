@@ -6,16 +6,16 @@ export function getAccessLevel(user) {
     user.subscriptionType === "premium" &&
     user.subscriptionStatus === "active" &&
     user.subscriptionExpiresAt &&
-    user.subscriptionExpiresAt > now
+    new Date(user.subscriptionExpiresAt) > now
   ) {
     return "FULL";
   }
 
-  // FREE TRIAL ACTIVE
+  // FREE TRIAL ACTIVE (first 3 days)
   if (
     user.subscriptionType === "freeTrial" &&
     user.freeTrialExpiresAt &&
-    user.freeTrialExpiresAt > now
+    new Date(user.freeTrialExpiresAt) > now
   ) {
     return "FULL";
   }

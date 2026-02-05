@@ -28,10 +28,14 @@ export async function activateSubscription(
   amount
 ) {
   const user = await User.findById(userId);
-  if (!user) throw new Error("User not found");
+  if (!user) {
+    throw new Error("User not found");
+  }
 
   const expectedAmount = getPlanAmount(plan);
-  if (!expectedAmount || expectedAmount !== amount) {
+  const paidAmount = Number(amount); // 🔥 FIX
+
+  if (!expectedAmount || expectedAmount !== paidAmount) {
     throw new Error("Invalid subscription amount");
   }
 
@@ -43,7 +47,9 @@ export async function activateSubscription(
   };
 
   const config = planConfig[plan];
-  if (!config) throw new Error("Invalid subscription plan");
+  if (!config) {
+    throw new Error("Invalid subscription plan");
+  }
 
   let expiresAt = dayjs();
   expiresAt =
@@ -61,7 +67,7 @@ export async function activateSubscription(
   user.freeTrialExpiresAt = undefined;
 
   user.transactionId = transactionId;
-  user.amount = amount;
+  user.amount = paidAmount; // 🔥 store number
 
   await user.save();
   return user;
