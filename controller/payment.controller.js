@@ -4,7 +4,6 @@ import {
   createBkashPayment,
   executeBkashPayment,
 } from "../service/bkash.service.js";
-
 import {
   getPlanAmount,
   activateSubscription,
@@ -18,19 +17,21 @@ export async function startBkashPayment(req, res, next) {
     const { plan } = req.body;
 
     const amount = getPlanAmount(plan);
-    if (!amount) throw new Error("Invalid subscription plan");
+    if (!amount) {
+      return res.status(400).json({ message: "Invalid subscription plan" });
+    }
 
     const token = await getBkashToken();
 
     const payload = {
-  mode: "0011",
-  payerReference: req.user.email,
-  callbackURL: `${process.env.CLIENT_URL}/bkash-success?source=bkash`,
-  amount,
-  currency: "BDT",
-  intent: "sale",
-  merchantInvoiceNumber: `INV-${Date.now()}`,
-};
+      mode: "0011",
+      payerReference: req.user.email,
+      callbackURL: `${process.env.CLIENT_URL}/bkash-success`,
+      amount,
+      currency: "BDT",
+      intent: "sale",
+      merchantInvoiceNumber: `INV-${Date.now()}`,
+    };
 
     const response = await createBkashPayment(token, payload);
 
@@ -55,45 +56,53 @@ export async function startBkashPayment(req, res, next) {
 }
 
 /* ─────────────────────────────
-   CONFIRM bKASH PAYMENT
+   CONFIRM bKASH PAYMENT (FIXED)
 ───────────────────────────── */
 export async function confirmBkashPayment(req, res, next) {
   try {
     const { paymentID } = req.body;
+    if (!paymentID) {
+      return res.status(400).json({ message: "paymentID is required" });
+    }
 
     const transaction = await Transaction.findOne({ paymentID });
-    if (!transaction) throw new Error("Transaction not found");
+    if (!transaction) {
+      return res.status(404).json({ message: "Transaction not found" });
+    }
 
     // 🔐 Prevent double execution
     if (transaction.status === "success") {
       return res.json({
         message: "Payment already confirmed",
-        subscription: {
-          plan: transaction.plan,
-        },
+        subscription: { plan: transaction.plan },
       });
     }
 
     const token = await getBkashToken();
     const data = await executeBkashPayment(token, paymentID);
 
-    if (data.transactionStatus !== "Completed") {
+    // 🔥 CORRECT VALIDATION (IMPORTANT)
+    if (data.statusCode !== "0000") {
       transaction.status = "failed";
+      transaction.rawResponse = data;
       await transaction.save();
-      throw new Error("Payment failed");
+
+      return res.status(400).json({
+        message: data.statusMessage || "Payment failed",
+      });
     }
 
-    // ✅ Update transaction
+    // ✅ UPDATE TRANSACTION
     transaction.status = "success";
     transaction.transactionId = data.trxID;
     transaction.executedAt = new Date();
     transaction.rawResponse = data;
     await transaction.save();
 
-    // ✅ AUTO SUBSCRIPTION ACTIVATION
+    // ✅ AUTO SUBSCRIPTION ACTIVATE
     const user = await activateSubscription(
       transaction.user,
-      transaction.plan,           // 🔥 plan from DB, NOT body
+      transaction.plan,
       data.trxID,
       Number(data.amount)
     );
