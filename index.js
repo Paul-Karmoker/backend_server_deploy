@@ -31,7 +31,7 @@ dotenv.config();
 const allowedOrigins = [
   'http://localhost:5173',
   'https://crosscareers.com',
-  'https://admin-crosscareers.vercel.app',
+  'https://fontend-admin-deploy.vercel.app',
   'http://localhost:3001'
 ];
 
